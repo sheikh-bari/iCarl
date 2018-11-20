@@ -17,26 +17,6 @@ import utils_resnet
 import utils_icarl
 import utils_data
 
-# ######### Modifiable Settings ##########
-# batch_size = 128            # Batch size
-# nb_val     = 50             # Validation samples per class
-# nb_cl      = 10             # Classes per group 
-# nb_groups  = 10            # Number of groups
-# nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-# epochs     = 1              # Total number of epochs 
-# lr_old     = 2.             # Initial learning rate
-# lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
-# lr_factor  = 5.             # Learning rate decrease factor
-# gpu        = '0'            # Used GPU
-# wght_decay = 0.00001        # Weight Decay
-# ########################################
-
-# ######### Paths  ##########
-# # Working station 
-# devkit_path = '../../cifar-100-python/cifar-100-python'
-# train_path  = '../../dummyData'#'../../ILSVRC2012_img_train_t3'#'/data/datasets/imagenets72'
-# save_path   = '../../result/'#'/data/srebuffi/backup/'
-
 ######### Modifiable Settings ##########
 batch_size = 10            # Batch size
 nb_val     = 32             # Validation samples per class
@@ -54,9 +34,8 @@ wght_decay = 0.00001        # Weight Decay
 ######### Paths  ##########
 # Working station 
 devkit_path = '/'
-#train_path  = '../../newImg'#'../../ILSVRC2012_img_train_t3'#'/data/datasets/imagenets72'
 train_path  = '../../../images'
-save_path   = 'result/'#'/data/srebuffi/backup/'
+save_path   = 'result/'
 
 ###########################
 
