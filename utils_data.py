@@ -9,7 +9,7 @@ except:
     import _pickle as cPickle
 
 def parse_devkit_meta(devkit_path):
-    meta_mat                = scipy.io.loadmat(devkit_path+'/file_list.mat')
+    meta_mat                = scipy.io.loadmat(devkit_path+'file_list.mat')
 
     #labels_dic              = dict((m[0][1][0], m[0][0][0][0]-1) for m in meta_mat['synsets'] if m[0][0][0][0] >= 1 and m[0][0][0][0] <= 1000)
     labels_dic              = dict((meta_mat['annotation_list'][m][0][0].split('-')[0], meta_mat['labels'][m][0]-1) for m in range(meta_mat['annotation_list'].shape[0]))
@@ -18,7 +18,7 @@ def parse_devkit_meta(devkit_path):
     label_names_dic         = dict((m[0][0].split('-')[0],m[0][0].split('-')[1].split('/')[0]) for m in meta_mat['annotation_list'])
     label_names             = [tup[1] for tup in sorted([(v,label_names_dic[k]) for k,v in labels_dic.items()], key=lambda x:x[0])]    
 
-    fval_ground_truth       = open(devkit_path+'/ILSVRC2012_validation_ground_truth.txt','r')
+    fval_ground_truth       = open(devkit_path+'ILSVRC2012_validation_ground_truth.txt','r')
     validation_ground_truth = [[int(line.strip()) - 1] for line in fval_ground_truth.readlines()]
     fval_ground_truth.close()
 

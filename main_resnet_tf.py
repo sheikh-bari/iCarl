@@ -33,8 +33,8 @@ wght_decay = 0.00001        # Weight Decay
 
 ######### Paths  ##########
 # Working station 
-devkit_path = '/'
-train_path  = '../../../images'
+devkit_path = ''
+train_path  = '../images1'
 save_path   = 'result/'
 
 ###########################
@@ -106,7 +106,7 @@ for itera in range(nb_groups):
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
     
     # Define the objective for the neural network: 1 vs all cross_entropy
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
         l2_reg        = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
         loss_class    = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch, logits=scores)) 
@@ -123,7 +123,7 @@ for itera in range(nb_groups):
     op_assign = [(variables_graph2[i]).assign(variables_graph[i]) for i in range(len(variables_graph))]
     
     # Define the objective for the neural network : 1 vs all cross_entropy + distillation
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
       scores            = tf.concat(scores,0)
       scores_stored     = tf.concat(scores_stored,0)
       old_cl            = (order[range(itera*nb_cl)]).astype(np.int32)
