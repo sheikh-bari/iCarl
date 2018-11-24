@@ -31,7 +31,7 @@ def read_data(prefix, labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
                         filter(lambda x: x.endswith('.jpg'), files_from_cl)))
     print(image_list)
-    prefix2     = np.array([file_i.split(prefix + '\\')[1].split("_")[0] for file_i in image_list])
+    prefix2     = np.array([file_i.split(prefix + '/')[1].split("_")[0] for file_i in image_list])
     
     labels_list = np.array([mixing[labels_dic[i]] for i in prefix2])
 
