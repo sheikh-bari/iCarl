@@ -18,7 +18,7 @@ def reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, tr
     ### Network and loss function  
     mean_img = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
     with tf.variable_scope('ResNet18'):
-        with tf.device('/gpu:'+gpu):
+        with tf.device('/cpu:'+gpu):
             scores         = utils_resnet.ResNet18(image_batch-mean_img, phase='test',num_outputs=nb_cl*nb_groups)
             graph          = tf.get_default_graph()
             op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
@@ -58,7 +58,7 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
   mean_img = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
   scores   = []
   with tf.variable_scope('ResNet18'):
-    with tf.device('/gpu:' + gpu):
+    with tf.device('/cpu:' + gpu):
         score = utils_resnet.ResNet18(image_batch-mean_img, phase='train',num_outputs=nb_cl*nb_groups)
         scores.append(score)
     
@@ -69,7 +69,7 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
   variables_graph = tf.get_collection(tf.GraphKeys.WEIGHTS, scope='ResNet18')
   scores_stored   = []
   with tf.variable_scope('store_ResNet18'):
-    with tf.device('/gpu:' + gpu):
+    with tf.device('/cpu:' + gpu):
         score = utils_resnet.ResNet18(image_batch-mean_img, phase='test',num_outputs=nb_cl*nb_groups)
         scores_stored.append(score)
     
