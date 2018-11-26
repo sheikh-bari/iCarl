@@ -6,6 +6,7 @@ import scipy
 import os
 import scipy.io
 import sys
+import gzip
 try:
     import cPickle
 except:
@@ -36,6 +37,15 @@ wght_decay = 0.00001        # Weight Decay
 devkit_path = ''
 train_path  = '../images1'
 save_path   = 'result/'
+
+with gzip.open('mnist.pkl.gz', 'rb') as f:
+  ((traind,trainl),(vald,vall),(testd,testl))=cPickle.load(f)
+  traind = traind.astype("float32").reshape(-1,28,28) ;
+  trainl = trainl.astype("float32") ;
+  testd = testd.astype("float32").reshape(-1,28,28) ;
+  testl = testl.astype("float32") ;
+
+
 
 ###########################
 
@@ -81,7 +91,6 @@ with open(str(nb_cl)+'settings_resnet.pickle','wb') as fp:
 ### Start of the main algorithm ###
 
 for itera in range(nb_groups):
-  
   # Files to load : training samples + protoset
   print('Batch of classes number {0} arrives ...'.format(itera+1))
   # Adding the stored exemplars to the training set
@@ -90,6 +99,7 @@ for itera in range(nb_groups):
     files_from_cl = files_train[itera]
   else:
     files_from_cl = files_train[itera][:]
+
     for i in range(itera*nb_cl):
       nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./itera)) # Reducing number of exemplars of the previous classes
       tmp_var = files_protoset[i]
@@ -97,6 +107,7 @@ for itera in range(nb_groups):
   
   ## Import the data reader ##
   image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
+  #image_train, label_train = utils_data.read_data(traind, trainl)
   image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
   label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
   

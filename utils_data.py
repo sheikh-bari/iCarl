@@ -3,6 +3,7 @@ import numpy as np
 import os
 import scipy.io
 import sys
+import matplotlib.pyplot as plt
 try:
     import cPickle
 except:
@@ -30,22 +31,71 @@ def read_data(prefix, labels_dic, mixing, files_from_cl):
     
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
                         filter(lambda x: x.endswith('.jpg'), files_from_cl)))
-    print(image_list)
+    # image list contain array with path of images [../images1/as.jpg, ../images1/bs.jpg]
+
     prefix2     = np.array([file_i.split(prefix + '/')[1].split("_")[0] for file_i in image_list])
     
     labels_list = np.array([mixing[labels_dic[i]] for i in prefix2])
-
+    # labels list should be same length of images list and contain the class of each image [1,2,2,1,3]
+    image_list = image_list[:10]
+    labels_list = labels_list[:10]
     assert(len(image_list) == len(labels_list))
     images             = tf.convert_to_tensor(image_list, dtype=tf.string)
     labels             = tf.convert_to_tensor(labels_list, dtype=tf.int32)
+
     input_queue        = tf.train.slice_input_producer([images, labels], shuffle=True, capacity=2000)
+    # input_queue = [<tf.Tensor 'input_producer/GatherV2:0' shape=() dtype=string>, <tf.Tensor 'input_producer/GatherV2_1:0' shape=() dtype=int32>]
+   
     image_file_content = tf.read_file(input_queue[0])
+    # input_queue[0] = <tf.Tensor 'input_producer/GatherV2:0' shape=() dtype=string>
+    #print(image_file_content, 'image file content')
+
     label              = input_queue[1]
+    print('inside')
+    img = tf.image.decode_jpeg(image_file_content, channels=3)
+    img = tf.random_crop(img, [224, 224, 3])    
+    img              = tf.image.random_flip_left_right(img)
+    init_op = tf.global_variables_initializer()
+    with tf.Session() as sess:
+        sess.run(init_op)
+        tf.train.start_queue_runners(sess)
+        for i in range(10):
+            print(i, 'iiii')
+            print(img)
+            print(image_list[i])
+            image = img.eval()
+            print(image.shape, ' shape')
+            plt.imshow(image)
+            plt.show()
+        sess.close()
+    #img =<tf.Tensor 'DecodeJpeg:0' shape=(?, ?, 3) dtype=uint8>
+    exit()
     image              = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
+    #image = <tf.Tensor resize_images/Squeeze:0' shape=(256, 256, 3) dtype=float32>
     image              = tf.random_crop(image, [224, 224, 3])
     image              = tf.image.random_flip_left_right(image)
-
+    print(image, ' image')
+    print(label, ' label')
+    exit()
     return image, label
+    #image = (<tf.Tensor 'random_flip_left_right/Merge:0' shape=(224, 224, 3) dtype=float32>, ' image')
+    #label = (<tf.Tensor 'input_producer/GatherV2_1:0' shape=() dtype=int32>, ' label')
+
+# def read_data(traind, trainl):
+#     assert(traind.shape[0] == trainl.shape[0])
+#     images              = tf.convert_to_tensor(traind)
+#     labels              = tf.convert_to_tensor(trainl)
+#     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True, capacity=2000)
+#     image_file_content  = input_queue[0]
+#     label               = input_queue[1]
+#     image               = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
+#     image               = tf.random_crop(image, [224,224,3])
+#     image               = tf.random_flip_left_right(image)
+#     print(image)
+#     print(label)
+
+#     exit()
+#     return imagesArr, labelsArr
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
