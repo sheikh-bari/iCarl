@@ -55,8 +55,10 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
     return Dtot,processed_files,label_dico
 
 def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
-  mean_img = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
+
+  mean_img = tf.constant([123.68, 116.779], dtype=tf.float32, shape=[ 1, 1, 28], name='img_mean')
   scores   = []
+  a = image_batch-mean_img
   with tf.variable_scope('ResNet18'):
     with tf.device('/cpu:' + gpu):
         score = utils_resnet.ResNet18(image_batch-mean_img, phase='train',num_outputs=nb_cl*nb_groups)

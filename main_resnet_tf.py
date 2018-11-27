@@ -106,11 +106,31 @@ for itera in range(nb_groups):
       files_from_cl += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
   
   ## Import the data reader ##
-  image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
-  #image_train, label_train = utils_data.read_data(traind, trainl)
-  image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
-  label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
+  #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
+  #Tensor("random_flip_left_right/Merge:0", shape=(224, 224, 3), dtype=float32)
+  #Tensor("input_producer/GatherV2_1:0", shape=(), dtype=int32)
   
+  
+  image_train, label_train = utils_data.read_data(traind, trainl)
+  #Tensor("Const:0", shape=(60000, 28, 28), dtype=float32)
+  #Tensor("Const_1:0", shape=(60000, 10), dtype=float32)
+
+  image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
+
+  # original
+  # (<tf.Tensor 'batch:0' shape=(10, 224, 224, 3) dtype=float32>, 'image batch')
+  # (<tf.Tensor 'batch:1' shape=(10,) dtype=int32>, 'label batch 0')
+
+  # my result
+  #(<tf.Tensor 'batch:0' shape=(10, 60000, 28, 28) dtype=float32>, 'image batch')
+  #(<tf.Tensor 'batch:1' shape=(10, 60000, 10) dtype=float32>, 'label batch 0')
+
+  
+  label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
+  print(label_batch, ' label batch')
+  #(<tf.Tensor 'one_hot:0' shape=(10, 60000, 10, 120) dtype=float32>, ' label batch')
+  #(<tf.Tensor 'one_hot:0' shape=(10, 120) dtype=float32>, ' label batch')
+
   ## Define the objective for the neural network ##
   if itera == 0:
     # No distillation

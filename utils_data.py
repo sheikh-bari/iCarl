@@ -27,7 +27,7 @@ def parse_devkit_meta(devkit_path):
     #label_names = ['Chihuahua', 'Japanese spaniel', 'Maltese dog, Maltese terrier, Maltese', 'Pekinese, Pekingese, Peke', 'Shih-Tzu', 'Blenheim spaniel', 'toy terrier', 'Rhodesian ridgeback', 'otterhound, otter hound', 'Chesapeake Bay retriever']
     return labels_dic, label_names, validation_ground_truth
 
-def read_data(prefix, labels_dic, mixing, files_from_cl):
+'''def read_data(prefix, labels_dic, mixing, files_from_cl):
     
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
                         filter(lambda x: x.endswith('.jpg'), files_from_cl)))
@@ -51,51 +51,63 @@ def read_data(prefix, labels_dic, mixing, files_from_cl):
     #print(image_file_content, 'image file content')
 
     label              = input_queue[1]
-    print('inside')
-    img = tf.image.decode_jpeg(image_file_content, channels=3)
-    img = tf.random_crop(img, [224, 224, 3])    
-    img              = tf.image.random_flip_left_right(img)
-    init_op = tf.global_variables_initializer()
-    with tf.Session() as sess:
-        sess.run(init_op)
-        tf.train.start_queue_runners(sess)
-        for i in range(10):
-            print(i, 'iiii')
-            print(img)
-            print(image_list[i])
-            image = img.eval()
-            print(image.shape, ' shape')
-            plt.imshow(image)
-            plt.show()
-        sess.close()
-    #img =<tf.Tensor 'DecodeJpeg:0' shape=(?, ?, 3) dtype=uint8>
-    exit()
+    # print('inside')
+    # img = tf.image.decode_jpeg(image_file_content, channels=3)
+    # img = tf.random_crop(img, [224, 224, 3])    
+    # img              = tf.image.random_flip_left_right(img)
+    # init_op = tf.global_variables_initializer()
+    # with tf.Session() as sess:
+    #     sess.run(init_op)
+    #     tf.train.start_queue_runners(sess)
+    #     for i in range(10):
+    #         print(i, 'iiii')
+    #         print(img)
+    #         print(image_list[i])
+    #         image = img.eval()
+    #         print(image.shape, ' shape')
+    #         plt.imshow(image)
+    #         plt.show()
+    #     sess.close()
+    # #img =<tf.Tensor 'DecodeJpeg:0' shape=(?, ?, 3) dtype=uint8>
+    # exit()
     image              = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
     #image = <tf.Tensor resize_images/Squeeze:0' shape=(256, 256, 3) dtype=float32>
     image              = tf.random_crop(image, [224, 224, 3])
     image              = tf.image.random_flip_left_right(image)
-    print(image, ' image')
-    print(label, ' label')
-    exit()
+
     return image, label
     #image = (<tf.Tensor 'random_flip_left_right/Merge:0' shape=(224, 224, 3) dtype=float32>, ' image')
     #label = (<tf.Tensor 'input_producer/GatherV2_1:0' shape=() dtype=int32>, ' label')
+'''
+def read_data(traind, trainl):
+    assert(traind.shape[0] == trainl.shape[0])
+    images              = tf.convert_to_tensor(traind)
+    labels              = tf.convert_to_tensor(trainl, dtype=tf.int32)
+    input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True, capacity=2000)
+    image_file_content  = input_queue[0]
+    label               = input_queue[1]
+    # image               = tf.reshape(image_file_content, )
+    # image              = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
+    # image               = tf.image.random_flip_left_right(image_file_content)
+    # print(image, 'img')
+    #exit()
+    # image               = tf.image.resize_images(image_file_content, channels=3), [256, 256])
+    # image               = tf.random_crop(image, [224,224,3])
+    # image               = tf.random_flip_left_right(image)
+    # init_op = tf.global_variables_initializer()
+    # with tf.Session() as sess:
+    #     sess.run(init_op)
+    #     tf.train.start_queue_runners(sess)
+    #     for i in range(10):
+    #         print(images, '23')
+    #         img = images[i].eval()
+    #         plt.imshow(img)
+    #         plt.show()
+    #print(image)
+    #print(label)
 
-# def read_data(traind, trainl):
-#     assert(traind.shape[0] == trainl.shape[0])
-#     images              = tf.convert_to_tensor(traind)
-#     labels              = tf.convert_to_tensor(trainl)
-#     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True, capacity=2000)
-#     image_file_content  = input_queue[0]
-#     label               = input_queue[1]
-#     image               = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
-#     image               = tf.random_crop(image, [224,224,3])
-#     image               = tf.random_flip_left_right(image)
-#     print(image)
-#     print(label)
-
-#     exit()
-#     return imagesArr, labelsArr
+    # (<tf.Tensor 'Const:0' shape=(60000, 28, 28) dtype=float32>, ' images')
+    return image_file_content, labels
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
