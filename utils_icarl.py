@@ -26,8 +26,7 @@ def reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, tr
     loss_class = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch_one_hot, logits=scores))
     
     ### Initilization
-    file = open(save_path+'model-iteration'+str(nb_cl)+'-%i.pickle' % itera,'rb')
-    params = dict(cPickle.load(file) )
+    params = dict(cPickle.load(open(save_path+'model-iteration'+str(nb_cl)+'-%i.pickle' % itera, 'rb')))
     inits  = utils_resnet.get_weight_initializer(params)
     
     return inits,scores,label_batch,loss_class,file_string_batch,op_feature_map
@@ -36,19 +35,14 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
     processed_files=[]
     label_dico=[]
     Dtot=[]
+    
     for i in range(int(np.ceil(len(files_from_cl)/batch_size)+1)):
-        print('scores', scores)
-        print('label_batch ', label_batch)
-        print('loss_class ', loss_class)
-        print('file_string_batch ', file_string_batch)
-        print('op_feature_map', op_feature_map)
-         
         sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
         processed_files.extend(files_tmp)
         label_dico.extend(l)
         mapped_prototypes = feat_map_tmp[:,0,0,:]
         Dtot.append((mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0))
-
+    
     Dtot            = np.concatenate(Dtot,axis=1)
     processed_files = np.array(processed_files)
     label_dico      = np.array(label_dico)

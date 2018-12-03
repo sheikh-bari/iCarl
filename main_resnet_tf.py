@@ -6,6 +6,7 @@ import scipy
 import os
 import scipy.io
 import sys
+import gzip
 try:
     import cPickle
 except:
@@ -17,13 +18,20 @@ import utils_resnet
 import utils_icarl
 import utils_data
 
+with gzip.open('mnist.pkl.gz', 'rb') as f:
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding='latin1')
+    traind = traind.astype("float32").reshape(-1, 28, 28)
+    trainl = trainl.astype("float32")
+    testd = testd.astype("float32").reshape(-1, 28, 28)
+    testl = testl.astype("float32")
+
 ######### Modifiable Settings ##########
-batch_size = 10            # Batch size
-nb_val     = 32             # Validation samples per class
-nb_cl      = 120            # Classes per group 
-nb_groups  = 1            # Number of groups
+batch_size = 128            # Batch size
+nb_val     = 30             # Validation samples per class
+nb_cl      = 10             # Classes per group 
+nb_groups  = 20             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 1              # Total number of epochs 
+epochs     = 1             # Total number of epochs 
 lr_old     = 2.             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
@@ -34,8 +42,8 @@ wght_decay = 0.00001        # Weight Decay
 ######### Paths  ##########
 # Working station 
 devkit_path = ''
-train_path  = '../images1'
-save_path   = 'result/'
+train_path  = '../../../images1'
+save_path   = ''
 
 ###########################
 
@@ -59,14 +67,15 @@ mixing = np.arange(nb_groups * nb_cl)
 np.random.shuffle(mixing)
 
 # Loading the labels
-labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
+#labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
 # Or you can just do like this
-# define_class = ['apple', 'banana', 'cat', 'dog', 'elephant', 'forg']
-# labels_dic = {k: v for v, k in enumerate(define_class)}
+define_class = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+labels_dic = {k: v for v, k in enumerate(define_class)}
 
 # Preparing the files per group of classes
 print("Creating a validation set ...")
-files_train, files_valid = utils_data.prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
+#files_train, files_valid = utils_data.prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
+files_train, files_valid, file_labels = utils_data.prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
 
 # Pickle order and files lists and mixing
 with open(str(nb_cl)+'mixing.pickle','wb') as fp:
@@ -85,26 +94,31 @@ for itera in range(nb_groups):
   # Files to load : training samples + protoset
   print('Batch of classes number {0} arrives ...'.format(itera+1))
   # Adding the stored exemplars to the training set
-
   if itera == 0:
     files_from_cl = files_train[itera]
+    labels_from_cl = file_labels[itera]
   else:
+    print('inside else')
+    exit()
     files_from_cl = files_train[itera][:]
     for i in range(itera*nb_cl):
       nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./itera)) # Reducing number of exemplars of the previous classes
       tmp_var = files_protoset[i]
       files_from_cl += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
-  
+
   ## Import the data reader ##
-  image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
+  #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
+  image_train, label_train   = utils_data.read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl=files_from_cl)
+
   image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
+
   label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
-  
+
   ## Define the objective for the neural network ##
   if itera == 0:
     # No distillation
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
-    
+
     # Define the objective for the neural network: 1 vs all cross_entropy
     with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
@@ -114,7 +128,7 @@ for itera in range(nb_groups):
         learning_rate = tf.placeholder(tf.float32, shape=[])
         opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
         train_step    = opt.minimize(loss,var_list=variables_graph)
-  
+
   if itera > 0:
     # Distillation
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
@@ -138,31 +152,38 @@ for itera in range(nb_groups):
       learning_rate     = tf.placeholder(tf.float32, shape=[])
       opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
       train_step        = opt.minimize(loss,var_list=variables_graph)
-  
+
   ## Run the learning phase ##
   with tf.Session(config=config) as sess:
     # Launch the data reader 
     coord   = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
+    print('start_queue_runners')
     sess.run(tf.global_variables_initializer())
+    print('sess.run')
     lr      = lr_old
-    
+    print('lr')
+
     # Run the loading of the weights for the learning network and the copy network
     if itera > 0:
       void0 = sess.run([(variables_graph[i]).assign(save_weights[i]) for i in range(len(variables_graph))])
       void1 = sess.run(op_assign)
-    
+
     for epoch in range(epochs):
         print("Batch of classes {} out of {} batches".format(
                 itera + 1, nb_groups))
         print('Epoch %i' % epoch)
-        for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
-            loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
-            loss_batch.append(loss_class_val)
+        print(int(np.ceil(len(files_from_cl)/batch_size)))
 
+        for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
+            print('before strucl')
+            loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
+            print('stuck')
+            loss_batch.append(loss_class_val)
+            print(i)
             # Plot the training error every 10 batches
             if len(loss_batch) == 10:
-                print(np.mean(loss_batch), 'mean of loss batch')
+                print(np.mean(loss_batch))
                 loss_batch = []
             
             # Plot the training top 1 accuracy every 80 batches
@@ -175,6 +196,7 @@ for itera in range(nb_groups):
         # Decrease the learning by 5 every 10 epoch after 20 epochs at the first learning rate
         if epoch in lr_strat:
             lr /= lr_factor
+        print('after for')
 
     coord.request_stop()
     coord.join(threads)
@@ -190,32 +212,37 @@ for itera in range(nb_groups):
   nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./(itera+1))) # Reducing number of exemplars for the previous classes
   files_from_cl = files_train[itera]
   inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path)
-
+  
   with tf.Session(config=config) as sess:
     coord   = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
-
     void3   = sess.run(inits)
-    
+
     # Load the training samples of the current batch of classes in the feature space to apply the herding algorithm
     Dtot,processed_files,label_dico = utils_icarl.load_class_in_feature_space(files_from_cl, batch_size, scores, label_batch, loss_class, file_string_batch, op_feature_map, sess)
-    
+    print(Dtot, 'dtot')
     processed_files = np.array([x.decode() for x in processed_files])
-
+    
     # Herding procedure : ranking of the potential exemplars
     print('Exemplars selection starting ...')
     for iter_dico in range(nb_cl):
-        ind_cl     = np.where(label_dico == order[iter_dico+3*nb_cl])[0]
-
+        print(len(label_dico))
+        print(label_dico,'labels_dic')
+        print(order, 'order')
+        print(itera, 'itera')
+        print(iter_dico+itera*nb_cl)
+        print(label_dico == order[iter_dico+itera*nb_cl])
+        ind_cl     = np.where(label_dico == order[iter_dico+itera*nb_cl])[0]
+        print(ind_cl)
         D          = Dtot[:,ind_cl]
+        print(D)
         files_iter = processed_files[ind_cl]
         mu         = np.mean(D,axis=1)
         w_t        = mu
         step_t     = 0
-        
         while not(len(files_protoset[itera*nb_cl+iter_dico]) == nb_protos_cl) and step_t<1.1*nb_protos_cl:
             tmp_t   = np.dot(w_t,D)
-            ind_max = np.argmax(tmp_t, ' hsgd')
+            ind_max = np.argmax(tmp_t)
             w_t     = w_t + mu - D[:,ind_max]
             step_t  += 1
             if files_iter[ind_max] not in files_protoset[itera*nb_cl+iter_dico]:
