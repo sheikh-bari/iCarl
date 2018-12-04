@@ -257,7 +257,7 @@ for itera in range(nb_groups):
   for iteration2 in range(itera+1):
       files_from_cl = files_train[iteration2]
       labels_from_cl = file_labels[iteration2]
-    indexs_of_files = file_indexes[iteration2]
+      indexs_of_files = file_indexes[iteration2]
       inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl)
       
       with tf.Session(config=config) as sess:
