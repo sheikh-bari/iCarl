@@ -54,7 +54,6 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     image_file_content  = tf.expand_dims(image_file_content,2)
     paddings = tf.constant([[98,98],[98,98],[1,1]])
     image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
-    print(image_file_content)
 
     image               = tf.image.random_flip_left_right(image_file_content)
 
@@ -89,10 +88,29 @@ def read_data(prefix, labels_dic, mixing, files_from_cl):
     image              = tf.image.resize_images(tf.image.decode_jpeg(image_file_content, channels=3), [256, 256])
     image              = tf.random_crop(image, [224, 224, 3])
     image              = tf.image.random_flip_left_right(image)
-    print(image)
-    print(label)
-    exit()
+
     return image, label
+
+
+def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_from_cl, files_from_cl):
+    image_list  = np.asarray(files_from_cl)
+
+    files_list  = indexes
+    labels_list = np.asarray(np.argmax(labels_from_cl,1))
+
+
+    images              = tf.convert_to_tensor(image_list)
+    files               = tf.convert_to_tensor(files_list)
+    labels              = tf.convert_to_tensor(labels_list)
+    input_queue         = tf.train.slice_input_producer([images, labels,files], shuffle=False, capacity=2000)
+    image_file_content  = input_queue[0]
+    label               = input_queue[1]
+    file_string         = input_queue[2]
+    image_file_content  = tf.expand_dims(image_file_content,2)
+    paddings            = tf.constant([[98,98],[98,98],[1,1]])
+    image               = tf.pad(image_file_content, paddings, "CONSTANT")
+
+    return image, label, file_string
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
@@ -124,20 +142,24 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
     files_train = []
     files_valid = []
     labels_train = []
+    files_indexes = []
     for _ in range(nb_groups):
         files_train.append([])
         files_valid.append([])
         labels_train.append([])
+        files_indexes.append([])
 
     for i in range(nb_groups):
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
             np.random.shuffle(tmp_ind)
+            
+            files_indexes[i].extend(tmp_ind[0:len(tmp_ind-nb_val)])
             labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind-nb_val)]])
             files_train[i].extend(traind[tmp_ind[0:len(tmp_ind-nb_val)]])
             files_valid[i].extend(traind[tmp_ind[len(tmp_ind)-nb_val:]])
 
-    return files_train, files_valid, labels_train
+    return files_train, files_valid, labels_train, files_indexes
 
 def prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val):
     files=os.listdir(train_path)
