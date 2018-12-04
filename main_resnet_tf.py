@@ -19,7 +19,7 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding='latin1')
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
     traind = traind.astype("float32").reshape(-1, 28, 28)
     trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1, 28, 28)
@@ -27,9 +27,9 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_val     = 3000             # Validation samples per class
-nb_cl      = 2             # Classes per group 
-nb_groups  = 5             # Number of groups
+nb_val     = 5000             # Validation samples per class
+nb_cl      = 10             # Classes per group 
+nb_groups  = 1             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
 epochs     = 1             # Total number of epochs 
 lr_old     = 2.             # Initial learning rate
@@ -222,6 +222,9 @@ for itera in range(nb_groups):
     print('Exemplars selection starting ...')
     for iter_dico in range(nb_cl):
         print(len(label_dico))
+        for j in label_dico:
+          if(j != 4):
+            print(j)
         print(label_dico,'labels_dico')
         print(order, 'order')
         print(itera, 'itera')
@@ -253,7 +256,9 @@ for itera in range(nb_groups):
   print('Computing theoretical class means for NCM and mean-of-exemplars for iCaRL ...')
   for iteration2 in range(itera+1):
       files_from_cl = files_train[iteration2]
-      inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path)
+      labels_from_cl = file_labels[iteration2]
+    indexs_of_files = file_indexes[iteration2]
+      inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl)
       
       with tf.Session(config=config) as sess:
           coord   = tf.train.Coordinator()

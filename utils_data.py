@@ -138,7 +138,7 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
     lbls = trainl
 
     labels_old = np.array([mixing[labels_dic[np.argmax(i)]] for i in lbls]) 
-    
+
     files_train = []
     files_valid = []
     labels_train = []
@@ -153,7 +153,7 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
             np.random.shuffle(tmp_ind)
-            
+
             files_indexes[i].extend(tmp_ind[0:len(tmp_ind-nb_val)])
             labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind-nb_val)]])
             files_train[i].extend(traind[tmp_ind[0:len(tmp_ind-nb_val)]])
