@@ -42,7 +42,7 @@ wght_decay = 0.00001        # Weight Decay
 ######### Paths  ##########
 # Working station 
 devkit_path = ''
-train_path  = '../../../images1'
+#train_path  = '../../../images1'
 save_path   = ''
 
 ###########################
