@@ -221,19 +221,11 @@ for itera in range(nb_groups):
     # Herding procedure : ranking of the potential exemplars
     print('Exemplars selection starting ...')
     for iter_dico in range(nb_cl):
-        print(len(label_dico))
-        for j in label_dico:
-          if(j != 4):
-            print(j)
-        print(label_dico,'labels_dico')
-        print(order, 'order')
-        print(itera, 'itera')
-        print(iter_dico+itera*nb_cl)
-        print(label_dico == order[iter_dico+itera*nb_cl])
+       
         ind_cl     = np.where(label_dico == order[iter_dico+itera*nb_cl])[0]
-        print(ind_cl)
+        
         D          = Dtot[:,ind_cl]
-        print(D)
+        
         files_iter = processed_files[ind_cl]
         mu         = np.mean(D,axis=1)
         w_t        = mu
