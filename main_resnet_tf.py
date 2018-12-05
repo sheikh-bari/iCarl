@@ -19,7 +19,7 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding='latin1')
     traind = traind.astype("float32").reshape(-1, 28, 28)
     trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1, 28, 28)
@@ -266,7 +266,7 @@ for itera in range(nb_groups):
           void2   = sess.run(inits)
           
           Dtot,processed_files,label_dico = utils_icarl.load_class_in_feature_space(files_from_cl, batch_size, scores, label_batch, loss_class, file_string_batch, op_feature_map, sess)
-          processed_files = np.array([x.decode() for x in processed_files])
+          #processed_files = np.array([x.decode() for x in processed_files])
           
           for iter_dico in range(nb_cl):
               ind_cl     = np.where(label_dico == order[iter_dico+iteration2*nb_cl])[0]
