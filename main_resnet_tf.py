@@ -87,6 +87,8 @@ with open(str(nb_cl)+'settings_resnet.pickle','wb') as fp:
     cPickle.dump(order,fp)
     cPickle.dump(files_valid,fp)
     cPickle.dump(files_train,fp)
+    cPickle.dump(file_labels,fp)
+    cPickle.dump(file_indexes,fp)
 
 
 ### Start of the main algorithm ###
@@ -184,7 +186,7 @@ for itera in range(nb_groups):
                 itera + 1, nb_groups))
         print('Epoch %i' % epoch)
 
-        for i in range(1):#int(np.ceil(len(files_from_cl)/batch_size))):
+        for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
             loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
             loss_batch.append(loss_class_val)
             # Plot the training error every 10 batches
