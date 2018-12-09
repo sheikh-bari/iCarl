@@ -41,7 +41,9 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
 
     files_from_cl = np.asarray(files_from_cl)
 
-    labels_from_cl = np.asarray(np.argmax(labels_from_cl,1))
+
+    labels_from_cl = np.asarray(labels_from_cl)
+    labels_from_cl = np.argmax(labels_from_cl,1)
 
     assert(len(files_from_cl) == len(labels_from_cl))
     images              = tf.convert_to_tensor(files_from_cl)
@@ -52,7 +54,8 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     label               = input_queue[1]
 
     image_file_content  = tf.expand_dims(image_file_content,2)
-    paddings = tf.constant([[98,98],[98,98],[1,1]])
+    #paddings = tf.constant([[98,98],[98,98],[1,1]])
+    paddings            = tf.constant([[100,100],[100,100],[1,1]])
     image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
 
     image               = tf.image.random_flip_left_right(image_file_content)
@@ -107,7 +110,8 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     label               = input_queue[1]
     file_string         = input_queue[2]
     image_file_content  = tf.expand_dims(image_file_content,2)
-    paddings            = tf.constant([[98,98],[98,98],[1,1]])
+    #paddings            = tf.constant([[98,98],[98,98],[1,1]])
+    paddings            = tf.constant([[100,100],[100,100],[1,1]])
     image               = tf.pad(image_file_content, paddings, "CONSTANT")
 
     return image, label, file_string
@@ -153,10 +157,9 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
             np.random.shuffle(tmp_ind)
-
-            files_indexes[i].extend(tmp_ind[0:len(tmp_ind-nb_val)])
-            labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind-nb_val)]])
-            files_train[i].extend(traind[tmp_ind[0:len(tmp_ind-nb_val)]])
+            files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])
+            labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind)-nb_val]])
+            files_train[i].extend(traind[tmp_ind[0:len(tmp_ind)-nb_val]])
             files_valid[i].extend(traind[tmp_ind[len(tmp_ind)-nb_val:]])
 
     return files_train, files_valid, labels_train, files_indexes

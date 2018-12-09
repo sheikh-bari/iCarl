@@ -28,10 +28,10 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 5000             # Validation samples per class
-nb_cl      = 10             # Classes per group 
-nb_groups  = 1             # Number of groups
+nb_cl      = 5             # Classes per group 
+nb_groups  = 2             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 1             # Total number of epochs 
+epochs     = 5             # Total number of epochs 
 lr_old     = 2.             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
@@ -43,7 +43,7 @@ wght_decay = 0.00001        # Weight Decay
 # Working station 
 devkit_path = ''
 #train_path  = '../../../images1'
-save_path   = ''
+save_path   = 'result/'
 
 ###########################
 
@@ -52,9 +52,11 @@ save_path   = ''
 ### Initialization of some variables ###
 class_means    = np.zeros((512,nb_groups*nb_cl,2,nb_groups))
 loss_batch     = []
-files_protoset =[]
+files_protoset = []
+labels_protoset = []
 for _ in range(nb_groups*nb_cl):
     files_protoset.append([])
+    labels_protoset.append([])
 
 
 ### Preparing the files for the training/validation ###
@@ -64,7 +66,7 @@ print("Mixing the classes and putting them in batches of classes...")
 np.random.seed(1993)
 order  = np.arange(nb_groups * nb_cl)
 mixing = np.arange(nb_groups * nb_cl)
-np.random.shuffle(mixing)
+#np.random.shuffle(mixing)
 
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
@@ -101,10 +103,21 @@ for itera in range(nb_groups):
   else:
 
     files_from_cl = files_train[itera][:]
+    labels_from_cl = file_labels[itera][:]
+    indexs_of_files = file_indexes[itera][:]
     for i in range(itera*nb_cl):
       nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./itera)) # Reducing number of exemplars of the previous classes
       tmp_var = files_protoset[i]
-      files_from_cl += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
+      tmp_lbl = labels_protoset[i]
+      tmp_arr = np.zeros((min(len(tmp_var),nb_protos_cl),10))
+      l = 0
+      for j in tmp_arr:
+        j[tmp_lbl[l]] = 1
+        l += 1
+      files_from_cl   = np.vstack((files_from_cl,traind[tmp_var[0:min(len(tmp_var),nb_protos_cl)]]))
+      #files_from_cl   += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
+      labels_from_cl  = np.vstack((labels_from_cl,tmp_arr))
+
 
   ## Import the data reader ##
   #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
@@ -170,9 +183,8 @@ for itera in range(nb_groups):
         print("Batch of classes {} out of {} batches".format(
                 itera + 1, nb_groups))
         print('Epoch %i' % epoch)
-        print(int(np.ceil(len(files_from_cl)/batch_size)))
 
-        for i in range(1):#range(int(np.ceil(len(files_from_cl)/batch_size))):
+        for i in range(1):#int(np.ceil(len(files_from_cl)/batch_size))):
             loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
             loss_batch.append(loss_class_val)
             # Plot the training error every 10 batches
@@ -180,7 +192,7 @@ for itera in range(nb_groups):
                 loss_batch = []
             
             # Plot the training top 1 accuracy every 80 batches
-            if (i+1)%80 == 0:
+            if (i+1)%24 == 0:
                 stat = []
                 stat += ([ll in best for ll, best in zip(lab, np.argsort(sc, axis=1)[:, -1:])])
                 stat =np.average(stat)
@@ -204,7 +216,9 @@ for itera in range(nb_groups):
   nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./(itera+1))) # Reducing number of exemplars for the previous classes
   files_from_cl = files_train[itera]
   indexs_of_files = file_indexes[itera]
+  labels_from_cl = file_labels[itera]
   #inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path)
+  
   inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl)
 
 
@@ -215,7 +229,7 @@ for itera in range(nb_groups):
 
     # Load the training samples of the current batch of classes in the feature space to apply the herding algorithm
     Dtot,processed_files,label_dico = utils_icarl.load_class_in_feature_space(files_from_cl, batch_size, scores, label_batch, loss_class, file_string_batch, op_feature_map, sess)
-    
+
     #processed_files = np.array([x.decode() for x in processed_files])
     
     # Herding procedure : ranking of the potential exemplars
@@ -227,6 +241,7 @@ for itera in range(nb_groups):
         D          = Dtot[:,ind_cl]
         
         files_iter = processed_files[ind_cl]
+        labels_iter = label_dico[ind_cl]
         mu         = np.mean(D,axis=1)
         w_t        = mu
         step_t     = 0
@@ -237,6 +252,7 @@ for itera in range(nb_groups):
             step_t  += 1
             if files_iter[ind_max] not in files_protoset[itera*nb_cl+iter_dico]:
               files_protoset[itera*nb_cl+iter_dico].append(files_iter[ind_max])
+              labels_protoset[itera*nb_cl+iter_dico].append(labels_iter[ind_max])
 
     coord.request_stop()
     coord.join(threads)
@@ -264,6 +280,7 @@ for itera in range(nb_groups):
               ind_cl     = np.where(label_dico == order[iter_dico+iteration2*nb_cl])[0]
               D          = Dtot[:,ind_cl]
               files_iter = processed_files[ind_cl]
+              labels_iter= label_dico[ind_cl]
               current_cl = order[range(iteration2*nb_cl,(iteration2+1)*nb_cl)]
               
               # Normal NCM mean
