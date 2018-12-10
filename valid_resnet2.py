@@ -20,8 +20,8 @@ import utils_data
 
 ######### Modifiable Settings ##########
 batch_size = 128             # Batch size
-nb_cl      = 10              # Classes per group 
-nb_groups  = 10              # Number of groups
+nb_cl      = 5              # Classes per group 
+nb_groups  = 2              # Number of groups
 top        = 5               # Choose to evaluate the top X accuracy 
 itera      = 9               # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
@@ -34,9 +34,9 @@ gpu        = '0'             # Used GPU
 # train_path  = '/ssd_disk/ILSVRC2012/train'
 # save_path   = '/media/data/srebuffi/'
 
-devkit_path = '../../cifar-100-python/cifar-100-python'
-train_path  = '../../dummyData'#'../../ILSVRC2012_img_train_t3'#'/data/datasets/imagenets72'
-save_path   = '../../result/'
+devkit_path = ''
+#train_path  = '../../../images1'
+save_path   = 'result/'
 
 ###########################
 
@@ -50,6 +50,10 @@ with open(str_settings_resnet,'rb') as fp:
     order       = cPickle.load(fp)
     files_valid = cPickle.load(fp)
     files_train = cPickle.load(fp)
+    file_labels = cPickle.load(fp)
+    file_indexes = cPickle.load(fp)
+    labels_valid = cPickle.load(fp)
+    all_file_indexes = cPickle.load(fp)
 
 # Load class means
 str_class_means = str(nb_cl)+'class_means.pickle'
@@ -57,7 +61,10 @@ with open(str_class_means,'rb') as fp:
       class_means = cPickle.load(fp)
 
 # Loading the labels
-labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
+#labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
+
+define_class = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+labels_dic = {k: v for v, k in enumerate(define_class)}
 
 # Initialization
 acc_list = np.zeros((nb_groups,3))
@@ -67,10 +74,14 @@ acc_list = np.zeros((nb_groups,3))
 print("Processing network after {} increments\t".format(itera))
 print("Evaluation on batches {} \t".format(eval_groups))
 files_from_cl = []
+labels_from_cl = []
+indexs_of_files = []
 for i in eval_groups:
     files_from_cl.extend(files_valid[i])
+    labels_from_cl.extend(labels_valid[i])
+    indexs_of_files.extends(all_file_indexes[i])
 
-inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path) 
+inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl) 
 
 with tf.Session(config=config) as sess:
     # Launch the prefetch system

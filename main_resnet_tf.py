@@ -77,7 +77,7 @@ labels_dic = {k: v for v, k in enumerate(define_class)}
 # Preparing the files per group of classes
 print("Creating a validation set ...")
 #files_train, files_valid = utils_data.prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
-files_train, files_valid, file_labels, file_indexes = utils_data.prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
+files_train, files_valid, file_labels, file_indexes, labels_valid, all_file_indexes = utils_data.prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb_val)
 
 # Pickle order and files lists and mixing
 with open(str(nb_cl)+'mixing.pickle','wb') as fp:
@@ -89,6 +89,8 @@ with open(str(nb_cl)+'settings_resnet.pickle','wb') as fp:
     cPickle.dump(files_train,fp)
     cPickle.dump(file_labels,fp)
     cPickle.dump(file_indexes,fp)
+    cPickle.dump(labels_valid,fp)
+    cPickle.dump(all_file_indexes,fp)
 
 
 ### Start of the main algorithm ###

@@ -97,10 +97,9 @@ def read_data(prefix, labels_dic, mixing, files_from_cl):
 
 def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_from_cl, files_from_cl):
     image_list  = np.asarray(files_from_cl)
-
+    
     files_list  = indexes
     labels_list = np.asarray(np.argmax(labels_from_cl,1))
-
 
     images              = tf.convert_to_tensor(image_list)
     files               = tf.convert_to_tensor(files_list)
@@ -113,7 +112,7 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     #paddings            = tf.constant([[98,98],[98,98],[1,1]])
     paddings            = tf.constant([[100,100],[100,100],[1,1]])
     image               = tf.pad(image_file_content, paddings, "CONSTANT")
-
+    
     return image, label, file_string
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
@@ -147,22 +146,30 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
     files_valid = []
     labels_train = []
     files_indexes = []
+    labels_valid = []
+    all_file_indexes = []
+
     for _ in range(nb_groups):
         files_train.append([])
         files_valid.append([])
         labels_train.append([])
         files_indexes.append([])
+        labels_valid.append([])
+        all_file_indexes.append([])
 
     for i in range(nb_groups):
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
             np.random.shuffle(tmp_ind)
+
             files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])
             labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind)-nb_val]])
             files_train[i].extend(traind[tmp_ind[0:len(tmp_ind)-nb_val]])
             files_valid[i].extend(traind[tmp_ind[len(tmp_ind)-nb_val:]])
+            labels_valid[i].extend(trainl[tmp_ind[len(tmp_ind)-nb_val:]])
+            all_file_indexes[i].extend(tmp_ind[len(tmp_ind)-nb_val:])
 
-    return files_train, files_valid, labels_train, files_indexes
+    return files_train, files_valid, labels_train, files_indexes, labels_valid, all_file_indexes
 
 def prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val):
     files=os.listdir(train_path)
