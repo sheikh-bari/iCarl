@@ -53,12 +53,12 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     image_file_content  = input_queue[0]
     label               = input_queue[1]
 
-    image_file_content  = tf.expand_dims(image_file_content,2)
+    #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings = tf.constant([[98,98],[98,98],[1,1]])
-    paddings            = tf.constant([[100,100],[100,100],[1,1]])
-    image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
+    #paddings            = tf.constant([[100,100],[100,100],[1,1]])
+    #image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
 
-    image               = tf.image.random_flip_left_right(image_file_content)
+    image               = image_file_content#tf.image.random_flip_left_right(image_file_content)
 
     # init_op = tf.global_variables_initializer()
     # with tf.Session() as sess:
@@ -69,10 +69,9 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     #         lbl = label.eval()
             
     #         print(lbl)
-    #         print(imag.shape, 'shape')
-    #         plt.imshow(imag)
+    #         plt.imshow(imag.reshape(28,28))
     #         plt.show()
-
+    # exit()
     return image, label
     
 def read_data(prefix, labels_dic, mixing, files_from_cl):

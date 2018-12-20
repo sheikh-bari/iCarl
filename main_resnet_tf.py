@@ -19,10 +19,10 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding='latin1')
-    traind = traind.astype("float32").reshape(-1, 28, 28)
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
+    traind = traind.astype("float32")
     trainl = trainl.astype("float32")
-    testd = testd.astype("float32").reshape(-1, 28, 28)
+    testd = testd.astype("float32")
     testl = testl.astype("float32")
 
 ######### Modifiable Settings ##########
@@ -135,7 +135,8 @@ for itera in range(nb_groups):
   if itera == 0:
     # No distillation
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
-
+    print(variables_graph, 'variables_graph')
+    exit()
     # Define the objective for the neural network: 1 vs all cross_entropy
     with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
