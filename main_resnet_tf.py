@@ -19,10 +19,10 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
-    traind = traind.astype("float32")
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
+    traind = traind.astype("float32").reshape(-1,784)
     trainl = trainl.astype("float32")
-    testd = testd.astype("float32")
+    testd = testd.astype("float32").reshape(-1,784)
     testl = testl.astype("float32")
 
 ######### Modifiable Settings ##########
@@ -135,41 +135,42 @@ for itera in range(nb_groups):
   if itera == 0:
     # No distillation
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
-    print(variables_graph, 'variables_graph')
-    exit()
+
     # Define the objective for the neural network: 1 vs all cross_entropy
     with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
         l2_reg        = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
-        loss_class    = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch, logits=scores)) 
+        print(l2_reg, 'l2_reg')
+        loss_class    = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=label_batch, logits=scores)) 
+        print(loss_class, 'loss_class')
         loss          = loss_class + l2_reg
         learning_rate = tf.placeholder(tf.float32, shape=[])
         opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
         train_step    = opt.minimize(loss,var_list=variables_graph)
 
-  if itera > 0:
-    # Distillation
-    variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
+  # if itera > 0:
+  #   # Distillation
+  #   variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
     
-    # Copying the network to use its predictions as ground truth labels
-    op_assign = [(variables_graph2[i]).assign(variables_graph[i]) for i in range(len(variables_graph))]
+  #   # Copying the network to use its predictions as ground truth labels
+  #   op_assign = [(variables_graph2[i]).assign(variables_graph[i]) for i in range(len(variables_graph))]
     
-    # Define the objective for the neural network : 1 vs all cross_entropy + distillation
-    with tf.device('/cpu:0'):
-      scores            = tf.concat(scores,0)
-      scores_stored     = tf.concat(scores_stored,0)
-      old_cl            = (order[range(itera*nb_cl)]).astype(np.int32)
-      new_cl            = (order[range(itera*nb_cl,nb_groups*nb_cl)]).astype(np.int32)
-      label_old_classes = tf.sigmoid(tf.stack([scores_stored[:,i] for i in old_cl],axis=1))
-      label_new_classes = tf.stack([label_batch[:,i] for i in new_cl],axis=1)
-      pred_old_classes  = tf.stack([scores[:,i] for i in old_cl],axis=1)
-      pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
-      l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
-      loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
-      loss              = loss_class + l2_reg
-      learning_rate     = tf.placeholder(tf.float32, shape=[])
-      opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
-      train_step        = opt.minimize(loss,var_list=variables_graph)
+  #   # Define the objective for the neural network : 1 vs all cross_entropy + distillation
+  #   with tf.device('/cpu:0'):
+  #     scores            = tf.concat(scores,0)
+  #     scores_stored     = tf.concat(scores_stored,0)
+  #     old_cl            = (order[range(itera*nb_cl)]).astype(np.int32)
+  #     new_cl            = (order[range(itera*nb_cl,nb_groups*nb_cl)]).astype(np.int32)
+  #     label_old_classes = tf.sigmoid(tf.stack([scores_stored[:,i] for i in old_cl],axis=1))
+  #     label_new_classes = tf.stack([label_batch[:,i] for i in new_cl],axis=1)
+  #     pred_old_classes  = tf.stack([scores[:,i] for i in old_cl],axis=1)
+  #     pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
+  #     l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
+  #     loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
+  #     loss              = loss_class + l2_reg
+  #     learning_rate     = tf.placeholder(tf.float32, shape=[])
+  #     opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
+  #     train_step        = opt.minimize(loss,var_list=variables_graph)
 
   ## Run the learning phase ##
   with tf.Session(config=config) as sess:

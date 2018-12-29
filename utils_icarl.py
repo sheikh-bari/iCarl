@@ -11,6 +11,7 @@ except:
     import _pickle as cPickle
 
 def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl):
+    print('inside')
     image_train, label_train,file_string       = utils_data.read_data_test_mnist(index_of_files, train_path,labels_dic, mixing,trainl, labels_from_cl, files_from_cl=files_from_cl)
 
     image_batch, label_batch,file_string_batch = tf.train.batch([image_train, label_train,file_string], batch_size=batch_size, num_threads=8)
@@ -24,6 +25,7 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
         with tf.device('/cpu:'+gpu):
             scores         = utils_resnet.ownNet(image_batch, phase='test',num_outputs=nb_cl*nb_groups)
             graph          = tf.get_default_graph()
+            print(graph, 'graph')
             op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
     
     loss_class = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch_one_hot, logits=scores))
@@ -58,7 +60,6 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
   with tf.variable_scope('ResNet18'):
     with tf.device('/cpu:' + gpu):
         score = utils_resnet.ownNet(image_batch, phase='train',num_outputs=nb_cl*nb_groups)
-        print(score, 'mscore')
         scores.append(score)
     
     scope = tf.get_variable_scope()
@@ -67,6 +68,7 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
   print(tf.GraphKeys.WEIGHTS, 'tf.GraphKeys.WEIGHTS')
   # First score and initialization
   variables_graph = tf.get_collection(tf.GraphKeys.WEIGHTS, scope='ResNet18')
+  print(variables_graph, 'print variables_graph')
   scores_stored   = []
   with tf.variable_scope('store_ResNet18'):
     with tf.device('/cpu:' + gpu):
