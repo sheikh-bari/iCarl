@@ -41,19 +41,17 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
 
     files_from_cl = np.asarray(files_from_cl)
 
-
     labels_from_cl = np.asarray(labels_from_cl)
     labels_from_cl = np.argmax(labels_from_cl,1)
-
+    
     assert(len(files_from_cl) == len(labels_from_cl))
     images              = tf.convert_to_tensor(files_from_cl)
     labels              = tf.convert_to_tensor(labels_from_cl)
-    print(images)
+
     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True,capacity=2000)
     image_file_content  = input_queue[0]
     label               = input_queue[1]
-    print(image_file_content)
-    exit()
+
     #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings = tf.constant([[98,98],[98,98],[1,1]])
     #paddings            = tf.constant([[100,100],[100,100],[1,1]])
@@ -161,7 +159,7 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
             np.random.shuffle(tmp_ind)
-
+            
             files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])
             labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind)-nb_val]])
             files_train[i].extend(traind[tmp_ind[0:len(tmp_ind)-nb_val]])

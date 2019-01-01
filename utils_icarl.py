@@ -44,12 +44,14 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
     tf.global_variables_initializer().run()
     for i in range(int(np.ceil(len(files_from_cl)/batch_size)+1)):
         sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
-
+        print(feat_map_tmp.shape)
         processed_files.extend(files_tmp)
         label_dico.extend(l)
+        
         mapped_prototypes = feat_map_tmp[:,0,0,:]
+        print(mapped_prototypes.shape)
         Dtot.append((mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0))
-    
+    exit()
     Dtot            = np.concatenate(Dtot,axis=1)
     processed_files = np.array(processed_files)
     label_dico      = np.array(label_dico)

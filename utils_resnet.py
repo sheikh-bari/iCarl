@@ -110,12 +110,7 @@ def ownNet(inp, phase, num_outputs=1000):
 
         dataReshaped=tf.reshape(inp, (-1,28,28,1)) ;
         print (dataReshaped, 'dataReshaped') ;
-        #b = get_variable("b", shape=[1, 1], dtype=tf.float32,
-         #                initializer=tf.zeros_initializer(),trainable=True)
-        #conv1 = myconv(inp=dataReshaped, name='H1', size=32, out_channels=5)
 
-        #conv1 = tf.add(tf.layers.conv2d(dataReshaped,32,5), b, name='H1')
-        #conv1 = tf.nn.relu(conv1, name='H1')
         conv1 = tf.nn.relu(tf.layers.conv2d(dataReshaped,32, 5,name="H1")) ;
 
         print (conv1, 'conv1') ;
@@ -124,18 +119,15 @@ def ownNet(inp, phase, num_outputs=1000):
         print (a1, 'a1') ;
 
         conv2 = tf.nn.relu(tf.layers.conv2d(a1, 64, 3,name="H2")) ;
-        #conv2 = tf.add(tf.layers.conv2d(a1,64,3), b, name="H2")
-        #conv2 = tf.nn.relu(conv2, name='H2')
-
-        #conv2 = myconv(inp=a1,name='H2', size=64,out_channels=3)
         print(conv2, 'conv2')
+
         a2 = tf.layers.average_pooling2d(conv2, 2, 2) ;
 
         print (a2, 'a2') ;
         a2flat = tf.reshape(a2, (-1,5*5*64)) ;
 
         W3 = tf.get_variable(name ="W3",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.01,0.01, [5*5*64,num_outputs])))
-        b3 = tf.get_variable(name ="b3",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.01,0.01, [1,num_outputs])))
+        b3 = tf.get_variable(name ="b3",  initializer=np.float32(npr.uniform(-0.01,0.01, [1,num_outputs])))
         #W3 = tf.Variable(npr.uniform(-0.01,0.01, [5*5*64,num_outputs]), collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], dtype=tf.float32, name ="W3") ;
         #b3 = tf.Variable(npr.uniform(-0.01,0.01, [1,num_outputs]), dtype=tf.float32, name ="b3") ;
 
@@ -143,7 +135,7 @@ def ownNet(inp, phase, num_outputs=1000):
         print (a3, 'a3') ;
 
         W4 = tf.get_variable(name ="W4",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.1,0.1, [num_outputs,num_outputs])))
-        b4 = tf.get_variable(name ="b4",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.01,0.01, [1,num_outputs])))
+        b4 = tf.get_variable(name ="b4",  initializer=np.float32(npr.uniform(-0.01,0.01, [1,num_outputs])))
         #W4 = tf.Variable(npr.uniform(-0.1,0.1, [num_outputs,num_outputs]), collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], dtype=tf.float32, name ="W4") ;
         #b4 = tf.Variable(npr.uniform(-0.01,0.01, [1,num_outputs]),dtype=tf.float32, name ="b4") ;
 
@@ -151,26 +143,6 @@ def ownNet(inp, phase, num_outputs=1000):
         print (logits, 'logits') ;
         
         return logits
-
-       # data_placeholder = tf.placeholder(tf.float32,[None,784]) ;
-       # fd = {data_placeholder: inp}
-
-       # Wh1 = tf.Variable(npr.uniform(-0.1,0.1, [784,100]), collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], dtype=tf.float32,name="Wh1")
-       # bh1 = tf.Variable(npr.uniform(-0.01,0.01, [1,100]),dtype=tf.float32, name ="bh1")
-       # Wh2 = tf.Variable(npr.uniform(-0.1,0.1, [100,100]), collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], dtype=tf.float32, name ="Wh2")
-       # bh2 = tf.Variable(npr.uniform(-0.01,0.01, [1,100]),dtype=tf.float32, name ="bh2")
-       # W = tf.Variable(npr.uniform(-0.01,0.01, [100,num_outputs]), collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], dtype=tf.float32, name ="W")
-       # b = tf.Variable(npr.uniform(-0.01,0.01, [1,num_outputs]),dtype=tf.float32, name ="b") ;
-
-       # l1 = tf.nn.relu(tf.matmul(data_placeholder, Wh1) + bh1)
-       # l2 = tf.nn.relu(tf.matmul(l1, Wh2) + bh2)
-       # logits = tf.matmul(l2, W)+b
-       # print(logits, 'logits')
-       # return logits
-
-
-
-
 
 def ResNet18(inp, phase, num_outputs=1000, alpha=0.0):
     def residual_block(inp, phase, alpha=0.0,nom='a',increase_dim=False,last=False):

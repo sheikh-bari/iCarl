@@ -128,9 +128,7 @@ for itera in range(nb_groups):
   ## Import the data reader ##
   #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
   image_train, label_train   = utils_data.read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl=files_from_cl)
-  print(image_train.shape)
-  print(label_train.shape)
-  exit()
+
   image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
 
   label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
