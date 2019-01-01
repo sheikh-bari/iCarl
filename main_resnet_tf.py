@@ -24,15 +24,17 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
     trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1,784)
     testl = testl.astype("float32")
+data_placeholder = tf.placeholder(tf.float32,[None,784]) ;
+label_placeholder = tf.placeholder(tf.float32,[None,10]) ;
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 5000             # Validation samples per class
-nb_cl      = 5             # Classes per group 
-nb_groups  = 2             # Number of groups
+nb_cl      = 10             # Classes per group 
+nb_groups  = 1             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 5             # Total number of epochs 
-lr_old     = 2.             # Initial learning rate
+epochs     = 1             # Total number of epochs 
+lr_old     = 0.1             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
@@ -50,7 +52,7 @@ save_path   = 'result/'
 #####################################################################################################
 
 ### Initialization of some variables ###
-class_means    = np.zeros((512,nb_groups*nb_cl,2,nb_groups))
+class_means    = np.zeros((64,nb_groups*nb_cl,2,nb_groups))
 loss_batch     = []
 files_protoset = []
 labels_protoset = []
@@ -126,7 +128,9 @@ for itera in range(nb_groups):
   ## Import the data reader ##
   #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
   image_train, label_train   = utils_data.read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl=files_from_cl)
-
+  print(image_train.shape)
+  print(label_train.shape)
+  exit()
   image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
 
   label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
@@ -140,37 +144,37 @@ for itera in range(nb_groups):
     with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
         l2_reg        = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
-        print(l2_reg, 'l2_reg')
-        loss_class    = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=label_batch, logits=scores)) 
-        print(loss_class, 'loss_class')
+        loss_class    = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch, logits=scores)) 
+        nrCorrect = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
         loss          = loss_class + l2_reg
         learning_rate = tf.placeholder(tf.float32, shape=[])
-        opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        #opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
         train_step    = opt.minimize(loss,var_list=variables_graph)
 
-  # if itera > 0:
-  #   # Distillation
-  #   variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
+  if itera > 0:
+    # Distillation
+    variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
     
-  #   # Copying the network to use its predictions as ground truth labels
-  #   op_assign = [(variables_graph2[i]).assign(variables_graph[i]) for i in range(len(variables_graph))]
+    # Copying the network to use its predictions as ground truth labels
+    op_assign = [(variables_graph2[i]).assign(variables_graph[i]) for i in range(len(variables_graph))]
     
-  #   # Define the objective for the neural network : 1 vs all cross_entropy + distillation
-  #   with tf.device('/cpu:0'):
-  #     scores            = tf.concat(scores,0)
-  #     scores_stored     = tf.concat(scores_stored,0)
-  #     old_cl            = (order[range(itera*nb_cl)]).astype(np.int32)
-  #     new_cl            = (order[range(itera*nb_cl,nb_groups*nb_cl)]).astype(np.int32)
-  #     label_old_classes = tf.sigmoid(tf.stack([scores_stored[:,i] for i in old_cl],axis=1))
-  #     label_new_classes = tf.stack([label_batch[:,i] for i in new_cl],axis=1)
-  #     pred_old_classes  = tf.stack([scores[:,i] for i in old_cl],axis=1)
-  #     pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
-  #     l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
-  #     loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
-  #     loss              = loss_class + l2_reg
-  #     learning_rate     = tf.placeholder(tf.float32, shape=[])
-  #     opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
-  #     train_step        = opt.minimize(loss,var_list=variables_graph)
+    # Define the objective for the neural network : 1 vs all cross_entropy + distillation
+    with tf.device('/cpu:0'):
+      scores            = tf.concat(scores,0)
+      scores_stored     = tf.concat(scores_stored,0)
+      old_cl            = (order[range(itera*nb_cl)]).astype(np.int32)
+      new_cl            = (order[range(itera*nb_cl,nb_groups*nb_cl)]).astype(np.int32)
+      label_old_classes = tf.sigmoid(tf.stack([scores_stored[:,i] for i in old_cl],axis=1))
+      label_new_classes = tf.stack([label_batch[:,i] for i in new_cl],axis=1)
+      pred_old_classes  = tf.stack([scores[:,i] for i in old_cl],axis=1)
+      pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
+      l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
+      loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
+      loss              = loss_class + l2_reg
+      learning_rate     = tf.placeholder(tf.float32, shape=[])
+      opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
+      train_step        = opt.minimize(loss,var_list=variables_graph)
 
   ## Run the learning phase ##
   with tf.Session(config=config) as sess:
@@ -189,16 +193,20 @@ for itera in range(nb_groups):
         print("Batch of classes {} out of {} batches".format(
                 itera + 1, nb_groups))
         print('Epoch %i' % epoch)
-
+        print(int(np.ceil(len(files_from_cl)/batch_size)))
         for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
             loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
+
+            #testacc = sess.run(nrCorrect, feed_dict = {data_placeholder: testd, label_placeholder: testl})
+            #print('my test accuracy %f' %testacc)
+
             loss_batch.append(loss_class_val)
             # Plot the training error every 10 batches
             if len(loss_batch) == 10:
                 loss_batch = []
-            
+
             # Plot the training top 1 accuracy every 80 batches
-            if (i+1)%24 == 0:
+            if (i+1)%22 == 0:
                 stat = []
                 stat += ([ll in best for ll, best in zip(lab, np.argsort(sc, axis=1)[:, -1:])])
                 stat =np.average(stat)
@@ -227,8 +235,9 @@ for itera in range(nb_groups):
   
   inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl)
 
-
   with tf.Session(config=config) as sess:
+    
+
     coord   = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
     void3   = sess.run(inits)
@@ -288,7 +297,7 @@ for itera in range(nb_groups):
               files_iter = processed_files[ind_cl]
               labels_iter= label_dico[ind_cl]
               current_cl = order[range(iteration2*nb_cl,(iteration2+1)*nb_cl)]
-              
+
               # Normal NCM mean
               class_means[:,order[iteration2*nb_cl+iter_dico],1,itera] = np.mean(D,axis=1)
               class_means[:,order[iteration2*nb_cl+iter_dico],1,itera] /= np.linalg.norm(class_means[:,order[iteration2*nb_cl+iter_dico],1,itera])

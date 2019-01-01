@@ -11,7 +11,7 @@ except:
     import _pickle as cPickle
 
 def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl):
-    print('inside')
+    
     image_train, label_train,file_string       = utils_data.read_data_test_mnist(index_of_files, train_path,labels_dic, mixing,trainl, labels_from_cl, files_from_cl=files_from_cl)
 
     image_batch, label_batch,file_string_batch = tf.train.batch([image_train, label_train,file_string], batch_size=batch_size, num_threads=8)
@@ -25,8 +25,9 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
         with tf.device('/cpu:'+gpu):
             scores         = utils_resnet.ownNet(image_batch, phase='test',num_outputs=nb_cl*nb_groups)
             graph          = tf.get_default_graph()
-            print(graph, 'graph')
-            op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
+
+            #op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
+            op_feature_map = graph.get_operation_by_name('ResNet18/average_pooling2d/AvgPool').outputs[0]
     
     loss_class = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch_one_hot, logits=scores))
 
@@ -40,9 +41,10 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
     processed_files=[]
     label_dico=[]
     Dtot=[]
-    
+    tf.global_variables_initializer().run()
     for i in range(int(np.ceil(len(files_from_cl)/batch_size)+1)):
         sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
+
         processed_files.extend(files_tmp)
         label_dico.extend(l)
         mapped_prototypes = feat_map_tmp[:,0,0,:]
@@ -64,11 +66,8 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
     
     scope = tf.get_variable_scope()
     scope.reuse_variables()
-  print(score, 'score')
-  print(tf.GraphKeys.WEIGHTS, 'tf.GraphKeys.WEIGHTS')
   # First score and initialization
   variables_graph = tf.get_collection(tf.GraphKeys.WEIGHTS, scope='ResNet18')
-  print(variables_graph, 'print variables_graph')
   scores_stored   = []
   with tf.variable_scope('store_ResNet18'):
     with tf.device('/cpu:' + gpu):
@@ -77,7 +76,6 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups):
     
     scope = tf.get_variable_scope()
     scope.reuse_variables()
-  print(scores_stored, 'scope 2')
   variables_graph2 = tf.get_collection(tf.GraphKeys.WEIGHTS, scope='store_ResNet18')
   
   return variables_graph,variables_graph2,scores,scores_stored

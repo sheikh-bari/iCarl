@@ -48,11 +48,12 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     assert(len(files_from_cl) == len(labels_from_cl))
     images              = tf.convert_to_tensor(files_from_cl)
     labels              = tf.convert_to_tensor(labels_from_cl)
-
+    print(images)
     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True,capacity=2000)
     image_file_content  = input_queue[0]
     label               = input_queue[1]
-
+    print(image_file_content)
+    exit()
     #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings = tf.constant([[98,98],[98,98],[1,1]])
     #paddings            = tf.constant([[100,100],[100,100],[1,1]])
@@ -107,12 +108,12 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     image_file_content  = input_queue[0]
     label               = input_queue[1]
     file_string         = input_queue[2]
-    image_file_content  = tf.expand_dims(image_file_content,2)
+    #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings            = tf.constant([[98,98],[98,98],[1,1]])
-    paddings            = tf.constant([[100,100],[100,100],[1,1]])
-    image               = tf.pad(image_file_content, paddings, "CONSTANT")
+    #paddings            = tf.constant([[100,100],[100,100],[1,1]])
+    #image               = tf.pad(image_file_content, paddings, "CONSTANT")
     
-    return image, label, file_string
+    return image_file_content, label, file_string
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),

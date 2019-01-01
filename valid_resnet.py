@@ -28,8 +28,8 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_cl      = 5             # Classes per group 
-nb_groups  = 2             # Number of groups
+nb_cl      = 10             # Classes per group 
+nb_groups  = 1             # Number of groups
 top        = 5              # Choose to evaluate the top X accuracy 
 is_cumul   = 'cumul'        # Evaluate on the cumul of classes if 'cumul', otherwise on the first classes
 gpu        = '0'            # Used GPU
@@ -108,7 +108,7 @@ for itera in range(nb_groups):
         stat_hb1     = []
         stat_icarl = []
         stat_ncm     = []
-        
+        tf.global_variables_initializer().run()
         for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
             sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
             mapped_prototypes = feat_map_tmp[:,0,0,:]

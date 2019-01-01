@@ -7,6 +7,7 @@ import os
 from scipy.spatial.distance import cdist
 import scipy.io
 import sys
+import gzip
 try:
     import cPickle
 except:
@@ -18,12 +19,19 @@ import utils_resnet
 import utils_icarl
 import utils_data
 
+with gzip.open('mnist.pkl.gz', 'rb') as f:
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
+    traind = traind.astype("float32").reshape(-1,784)
+    trainl = trainl.astype("float32")
+    testd = testd.astype("float32").reshape(-1,784)
+    testl = testl.astype("float32")
+
 ######### Modifiable Settings ##########
 batch_size = 128             # Batch size
-nb_cl      = 5              # Classes per group 
-nb_groups  = 2              # Number of groups
+nb_cl      = 10              # Classes per group 
+nb_groups  = 1              # Number of groups
 top        = 5               # Choose to evaluate the top X accuracy 
-itera      = 9               # Choose the state of the network : 0 correspond to the first batch of classes
+itera      = 0               # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
 ########################################
@@ -54,7 +62,7 @@ with open(str_settings_resnet,'rb') as fp:
     file_indexes = cPickle.load(fp)
     labels_valid = cPickle.load(fp)
     all_file_indexes = cPickle.load(fp)
-
+print(len(files_valid))
 # Load class means
 str_class_means = str(nb_cl)+'class_means.pickle'
 with open(str_class_means,'rb') as fp:
@@ -79,11 +87,12 @@ indexs_of_files = []
 for i in eval_groups:
     files_from_cl.extend(files_valid[i])
     labels_from_cl.extend(labels_valid[i])
-    indexs_of_files.extends(all_file_indexes[i])
+    indexs_of_files.extend(all_file_indexes[i])
 
 inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl) 
 
 with tf.Session(config=config) as sess:
+    tf.global_variables_initializer().run()
     # Launch the prefetch system
     coord   = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
