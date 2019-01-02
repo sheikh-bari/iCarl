@@ -19,7 +19,7 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
     traind = traind.astype("float32").reshape(-1,784)
     trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1,784)
@@ -30,10 +30,10 @@ label_placeholder = tf.placeholder(tf.float32,[None,10]) ;
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 5000             # Validation samples per class
-nb_cl      = 10             # Classes per group 
-nb_groups  = 1             # Number of groups
+nb_cl      = 5             # Classes per group 
+nb_groups  = 2             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 1             # Total number of epochs 
+epochs     = 100             # Total number of epochs 
 lr_old     = 0.1             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
@@ -146,8 +146,8 @@ for itera in range(nb_groups):
         nrCorrect = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
         loss          = loss_class + l2_reg
         learning_rate = tf.placeholder(tf.float32, shape=[])
-        #opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
-        opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
+        opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        #opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
         train_step    = opt.minimize(loss,var_list=variables_graph)
 
   if itera > 0:

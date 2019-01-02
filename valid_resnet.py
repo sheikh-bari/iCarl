@@ -20,16 +20,16 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding='latin1')
-    traind = traind.astype("float32").reshape(-1, 28, 28)
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
+    traind = traind.astype("float32").reshape(-1, 784)
     trainl = trainl.astype("float32")
-    testd = testd.astype("float32").reshape(-1, 28, 28)
+    testd = testd.astype("float32").reshape(-1, 784)
     testl = testl.astype("float32")
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_cl      = 10             # Classes per group 
-nb_groups  = 1             # Number of groups
+nb_cl      = 5             # Classes per group 
+nb_groups  = 2             # Number of groups
 top        = 5              # Choose to evaluate the top X accuracy 
 is_cumul   = 'cumul'        # Evaluate on the cumul of classes if 'cumul', otherwise on the first classes
 gpu        = '0'            # Used GPU
