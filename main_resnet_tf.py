@@ -19,7 +19,7 @@ import utils_icarl
 import utils_data
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f)
+    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f,encoding="latin-1")
     traind = traind.astype("float32").reshape(-1,784)
     trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1,784)
@@ -30,8 +30,8 @@ label_placeholder = tf.placeholder(tf.float32,[None,10]) ;
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 5000             # Validation samples per class
-nb_cl      = 5             # Classes per group 
-nb_groups  = 2             # Number of groups
+nb_cl      = 2             # Classes per group 
+nb_groups  = 5             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
 epochs     = 100             # Total number of epochs 
 lr_old     = 0.1             # Initial learning rate
@@ -204,7 +204,7 @@ for itera in range(nb_groups):
                 loss_batch = []
 
             # Plot the training top 1 accuracy every 80 batches
-            if (i+1)%22 == 0:
+            if (i+1)%17 == 0:
                 stat = []
                 stat += ([ll in best for ll, best in zip(lab, np.argsort(sc, axis=1)[:, -1:])])
                 stat =np.average(stat)
