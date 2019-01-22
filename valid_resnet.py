@@ -8,6 +8,8 @@ from scipy.spatial.distance import cdist
 import scipy.io
 import sys
 import gzip
+import matplotlib.pyplot as plt
+
 try:
     import cPickle
 except:
@@ -23,13 +25,14 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
     traind = traind.astype("float32").reshape(-1, 784)
     trainl = trainl.astype("float32")
-    testd = testd.astype("float32").reshape(-1, 784)
+    testd = testd.astype("float32").reshape(-1,28,28)
     testl = testl.astype("float32")
+_traind = tf.placeholder(tf.float32,[None,28,28]) ;
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_cl      = 2             # Classes per group 
-nb_groups  = 5             # Number of groups
+nb_cl      = 10             # Classes per group 
+nb_groups  = 1             # Number of groups
 top        = 5              # Choose to evaluate the top X accuracy 
 is_cumul   = 'cumul'        # Evaluate on the cumul of classes if 'cumul', otherwise on the first classes
 gpu        = '0'            # Used GPU
@@ -97,8 +100,9 @@ for itera in range(nb_groups):
         indexs_of_files.extend(all_file_indexes[i])
 
     inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl) 
-    
+
     with tf.Session(config=config) as sess:
+        
         # Launch the prefetch system
         coord   = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
@@ -109,8 +113,13 @@ for itera in range(nb_groups):
         stat_icarl = []
         stat_ncm     = []
         tf.global_variables_initializer().run()
+        #testout = sess.run(scores, feed_dict = {_traind : testd})
         for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
+            
             sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
+            print(sc[0], 'sc')
+
+            exit()
             mapped_prototypes = feat_map_tmp[:,0,0,:]
             pred_inter    = (mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0)
             sqd_icarl     = -cdist(class_means[:,:,0,itera].T, pred_inter.T, 'sqeuclidean').T
@@ -118,6 +127,9 @@ for itera in range(nb_groups):
             stat_hb1     += ([ll in best for ll, best in zip(l, np.argsort(sc, axis=1)[:, -top:])])
             stat_icarl   += ([ll in best for ll, best in zip(l, np.argsort(sqd_icarl, axis=1)[:, -top:])])
             stat_ncm     += ([ll in best for ll, best in zip(l, np.argsort(sqd_ncm, axis=1)[:, -top:])])
+
+            # print ("--------------------") ;
+            # print("logits", testout[i], "decision", testout[i].argmax(), "label", testl[i].argmax()) ;
 
         coord.request_stop()
         coord.join(threads)

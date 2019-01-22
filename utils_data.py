@@ -35,18 +35,19 @@ def parse_devkit_meta(devkit_path):
 
     return labels_dic, label_names, validation_ground_truth
 
-def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
+def read_data_mnist(traind, trainl, labels_dic, labels_from_cl, mixing, files_from_cl):
 
     lbls = trainl
 
     files_from_cl = np.asarray(files_from_cl)
 
     labels_from_cl = np.asarray(labels_from_cl)
-    labels_from_cl = np.argmax(labels_from_cl,1)
+    labels_old = np.array([mixing[labels_dic[np.argmax(i)]] for i in labels_from_cl])
+    #labels_from_cl = np.argmax(labels_from_cl,1)
     
     assert(len(files_from_cl) == len(labels_from_cl))
     images              = tf.convert_to_tensor(files_from_cl)
-    labels              = tf.convert_to_tensor(labels_from_cl)
+    labels              = tf.convert_to_tensor(labels_old)
 
     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True,capacity=2000)
     image_file_content  = input_queue[0]
@@ -97,7 +98,10 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     image_list  = np.asarray(files_from_cl)
     
     files_list  = indexes
-    labels_list = np.asarray(np.argmax(labels_from_cl,1))
+    
+    labels_list = np.array([mixing[labels_dic[np.argmax(i)]] for i in labels_from_cl])
+
+    #labels_list = np.asarray(np.argmax(labels_from_cl,1))
 
     images              = tf.convert_to_tensor(image_list)
     files               = tf.convert_to_tensor(files_list)
@@ -158,6 +162,7 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
     for i in range(nb_groups):
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
+
             np.random.shuffle(tmp_ind)
             
             files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])

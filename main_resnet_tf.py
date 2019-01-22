@@ -7,6 +7,7 @@ import os
 import scipy.io
 import sys
 import gzip
+import matplotlib.pyplot as plt
 try:
     import cPickle
 except:
@@ -29,12 +30,12 @@ label_placeholder = tf.placeholder(tf.float32,[None,10]) ;
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_val     = 5000             # Validation samples per class
-nb_cl      = 2             # Classes per group 
-nb_groups  = 5             # Number of groups
+nb_val     = 200             # Validation samples per class
+nb_cl      = 10             # Classes per group 
+nb_groups  = 1             # Number of groups
 nb_proto   = 20             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 100             # Total number of epochs 
-lr_old     = 0.1             # Initial learning rate
+epochs     = 1             # Total number of epochs 
+lr_old     = 2.             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
@@ -68,7 +69,7 @@ print("Mixing the classes and putting them in batches of classes...")
 np.random.seed(1993)
 order  = np.arange(nb_groups * nb_cl)
 mixing = np.arange(nb_groups * nb_cl)
-#np.random.shuffle(mixing)
+np.random.shuffle(mixing)
 
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
@@ -127,8 +128,9 @@ for itera in range(nb_groups):
 
   ## Import the data reader ##
   #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
-  image_train, label_train   = utils_data.read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl=files_from_cl)
-
+  image_train, label_train   = utils_data.read_data_mnist(traind, trainl, labels_dic, labels_from_cl, mixing, files_from_cl=files_from_cl)
+  print(image_train.shape)
+  exit()
   image_batch, label_batch_0 = tf.train.batch([image_train, label_train], batch_size=batch_size, num_threads=8)
 
   label_batch = tf.one_hot(label_batch_0,nb_groups*nb_cl)
@@ -137,17 +139,23 @@ for itera in range(nb_groups):
   if itera == 0:
     # No distillation
     variables_graph,variables_graph2,scores,scores_stored = utils_icarl.prepare_networks(gpu,image_batch, nb_cl, nb_groups)
-
+    print(variables_graph)
+    print(scores)
     # Define the objective for the neural network: 1 vs all cross_entropy
     with tf.device('/cpu:0'):
         scores        = tf.concat(scores,0)
         l2_reg        = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
+
         loss_class    = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch, logits=scores)) 
-        nrCorrect = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
+
+        ## classification accuracy
+        nrCorrect     = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
         loss          = loss_class + l2_reg
+
         learning_rate = tf.placeholder(tf.float32, shape=[])
-        opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
-        #opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
+        #opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.9)
+
         train_step    = opt.minimize(loss,var_list=variables_graph)
 
   if itera > 0:
@@ -169,10 +177,12 @@ for itera in range(nb_groups):
       pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
       l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
       loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
+      nrCorrect         = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
       loss              = loss_class + l2_reg
       learning_rate     = tf.placeholder(tf.float32, shape=[])
-      opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
-      train_step        = opt.minimize(loss,var_list=variables_graph)
+      opt               = tf.train.GradientDescentOptimizer(learning_rate = 0.9)
+      train_step        = opt.minimize(loss,var_list= variables_graph)
+
 
   ## Run the learning phase ##
   with tf.Session(config=config) as sess:
@@ -193,27 +203,25 @@ for itera in range(nb_groups):
         print('Epoch %i' % epoch)
         print(int(np.ceil(len(files_from_cl)/batch_size)))
         for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
+
             loss_class_val, _ ,sc,lab = sess.run([loss_class, train_step,scores,label_batch_0], feed_dict={learning_rate: lr})
-
-            #testacc = sess.run(nrCorrect, feed_dict = {data_placeholder: testd, label_placeholder: testl})
-            #print('my test accuracy %f' %testacc)
-
             loss_batch.append(loss_class_val)
             # Plot the training error every 10 batches
             if len(loss_batch) == 10:
                 loss_batch = []
 
             # Plot the training top 1 accuracy every 80 batches
-            if (i+1)%17 == 0:
+            if (i+1)%80 == 0:
                 stat = []
                 stat += ([ll in best for ll, best in zip(lab, np.argsort(sc, axis=1)[:, -1:])])
                 stat =np.average(stat)
                 print('Training accuracy %f' %stat)
-        
+                
+        #testacc = sess.run(nrCorrect, feed_dict = {data_placeholder: testd, label_placeholder: testl})
+        #print('my test accuracy %f' %testacc)
         # Decrease the learning by 5 every 10 epoch after 20 epochs at the first learning rate
         if epoch in lr_strat:
             lr /= lr_factor
-
     coord.request_stop()
     coord.join(threads)
 
@@ -230,7 +238,7 @@ for itera in range(nb_groups):
   indexs_of_files = file_indexes[itera]
   labels_from_cl = file_labels[itera]
   #inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(files_from_cl, gpu, itera, batch_size, train_path, labels_dic, mixing, nb_groups, nb_cl, save_path)
-  
+
   inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl)
 
   with tf.Session(config=config) as sess:
@@ -239,7 +247,7 @@ for itera in range(nb_groups):
     coord   = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
     void3   = sess.run(inits)
-
+    
     # Load the training samples of the current batch of classes in the feature space to apply the herding algorithm
     Dtot,processed_files,label_dico = utils_icarl.load_class_in_feature_space(files_from_cl, batch_size, scores, label_batch, loss_class, file_string_batch, op_feature_map, sess)
 
@@ -250,7 +258,6 @@ for itera in range(nb_groups):
     for iter_dico in range(nb_cl):
        
         ind_cl     = np.where(label_dico == order[iter_dico+itera*nb_cl])[0]
-        
         D          = Dtot[:,ind_cl]
         
         files_iter = processed_files[ind_cl]
@@ -319,4 +326,31 @@ for itera in range(nb_groups):
   with open(str(nb_cl)+'files_protoset.pickle','wb') as fp:
       cPickle.dump(files_protoset,fp)
 
+
+  # with tf.Session(config=config) as sess:
+  #   sess.run(tf.global_variables_initializer())
+  #   print(scores)
+  #   testout = sess.run(scores, feed_dict = {data_placeholder : testd}) ;
+
+  # testit = 0 ;
+
+  # def test_cb(self):
+  #   global testit ;
+  #   ax1.cla();
+  #   ax2.cla();
+  #   ax3.cla();
+  #   ax1.imshow(testd[testit].reshape(28,28),cmap=plt.get_cmap("bone")) ;
+  #   confs =sm(testout[testit]) ;
+  #   ax2.bar(range(0,10),confs);
+  #   ax2.set_ylim(0,1.)
+  #   ce = -(confs*np.log(confs+0.00000001)).sum() ;
+  #   ax3.text(0.5,0.5,str(ce),fontsize=20)
+  #   testit = testit + 1;
+  #   f.canvas.draw();
+  #   print ("--------------------") ;
+  #   print("logits", testout[testit], "probabilities", sm(testout[testit]), "decision", testout[testit].argmax(), "label", testl[testit].argmax()) ;
+
+  # f,(ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3) ;
+  # f.canvas.mpl_connect('button_press_event', test_cb)
+  # plt.show();
 

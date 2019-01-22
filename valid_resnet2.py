@@ -28,10 +28,10 @@ with gzip.open('mnist.pkl.gz', 'rb') as f:
 
 ######### Modifiable Settings ##########
 batch_size = 128             # Batch size
-nb_cl      = 10              # Classes per group 
-nb_groups  = 1              # Number of groups
+nb_cl      = 5              # Classes per group 
+nb_groups  = 2              # Number of groups
 top        = 5               # Choose to evaluate the top X accuracy 
-itera      = 0               # Choose the state of the network : 0 correspond to the first batch of classes
+itera      = 1               # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
 ########################################

@@ -109,21 +109,21 @@ def myconv(inp, name, size, out_channels):
 def ownNet(inp, phase, num_outputs=1000):
 
         dataReshaped=tf.reshape(inp, (-1,28,28,1)) ;
-        print (dataReshaped, 'dataReshaped') ;
+        #print (dataReshaped, 'dataReshaped') ;
 
         conv1 = tf.nn.relu(tf.layers.conv2d(dataReshaped,32, 5,name="H1")) ;
 
-        print (conv1, 'conv1') ;
+        #print (conv1, 'conv1') ;
 
         a1 = tf.layers.max_pooling2d(conv1, 2, 2) ;
-        print (a1, 'a1') ;
+        #print (a1, 'a1') ;
 
         conv2 = tf.nn.relu(tf.layers.conv2d(a1, 64, 3,name="H2")) ;
-        print(conv2, 'conv2')
+        #print(conv2, 'conv2')
 
         a2 = tf.layers.average_pooling2d(conv2, 2, 2) ;
 
-        print (a2, 'a2') ;
+        #print (a2, 'a2') ;
         a2flat = tf.reshape(a2, (-1,5*5*64)) ;
 
         W3 = tf.get_variable(name ="W3",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.01,0.01, [5*5*64,num_outputs])))
@@ -132,7 +132,7 @@ def ownNet(inp, phase, num_outputs=1000):
         #b3 = tf.Variable(npr.uniform(-0.01,0.01, [1,num_outputs]), dtype=tf.float32, name ="b3") ;
 
         a3 = tf.nn.relu(tf.matmul(a2flat, W3) + b3) ;
-        print (a3, 'a3') ;
+        #print (a3, 'a3') ;
 
         W4 = tf.get_variable(name ="W4",  collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], initializer=np.float32(npr.uniform(-0.1,0.1, [num_outputs,num_outputs])))
         b4 = tf.get_variable(name ="b4",  initializer=np.float32(npr.uniform(-0.01,0.01, [1,num_outputs])))
@@ -140,7 +140,7 @@ def ownNet(inp, phase, num_outputs=1000):
         #b4 = tf.Variable(npr.uniform(-0.01,0.01, [1,num_outputs]),dtype=tf.float32, name ="b4") ;
 
         logits = tf.matmul(a3, W4) + b4 ;
-        print (logits, 'logits') ;
+        #print (logits, 'logits') ;
         
         return logits
 
