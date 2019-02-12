@@ -160,10 +160,11 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
         labels_valid.append([])
         all_file_indexes.append([])
 
+    cl = 0
     for i in range(nb_groups):
-        for i2 in range(nb_cl):
-            tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
-            tmp_ind_test = np.where(labels_old_test == order[nb_cl*i+i2])[0]
+        for i2 in range(nb_cl[i]):
+            tmp_ind=np.where(labels_old == order[cl])[0]
+            tmp_ind_test = np.where(labels_old_test == order[cl])[0]
 
             np.random.shuffle(tmp_ind)
             np.random.shuffle(tmp_ind)
@@ -181,7 +182,7 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
             files_valid[i].extend(testd[tmp_ind_test])
             labels_valid[i].extend(testl[tmp_ind_test])
             all_file_indexes[i].extend(tmp_ind_test)
-
+            cl = cl + 1
     return files_train, files_valid, labels_train, files_indexes, labels_valid, all_file_indexes
 
 def prepare_files(train_path, mixing, order, labels_dic, nb_groups, nb_cl, nb_val):

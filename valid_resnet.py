@@ -35,8 +35,9 @@ keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_cl      = 5             # Classes per group 
+total_nb_cl = 10
 nb_groups  = 2             # Number of groups
-top        = 5              # Choose to evaluate the top X accuracy 
+top        = 1              # Choose to evaluate the top X accuracy 
 is_cumul   = 'cumul'        # Evaluate on the cumul of classes if 'cumul', otherwise on the first classes
 gpu        = '0'            # Used GPU
 ########################################
@@ -47,18 +48,18 @@ gpu        = '0'            # Used GPU
 # train_path  = '/data/datasets/imagenets72'
 # save_path   = '/data/srebuffi/backup/'
 
-devkit_path = '10epochs100proto/'
+devkit_path = ''
 #train_path  = '../../../images1'
-save_path   = './10epochs100proto/result/'
+save_path   = 'result/'
 
 ###########################
 
 # Load ResNet settings
-str_mixing = devkit_path +str(nb_cl)+'mixing.pickle'
+str_mixing = devkit_path +str(total_nb_cl)+'mixing.pickle'
 with open(str_mixing,'rb') as fp:
     mixing = cPickle.load(fp)
 
-str_settings_resnet = devkit_path+str(nb_cl)+'settings_resnet.pickle'
+str_settings_resnet = devkit_path+str(total_nb_cl)+'settings_resnet.pickle'
 with open(str_settings_resnet,'rb') as fp:
     order       = cPickle.load(fp)
     files_valid = cPickle.load(fp)
@@ -69,7 +70,7 @@ with open(str_settings_resnet,'rb') as fp:
     all_file_indexes = cPickle.load(fp)
 
 # Load class means
-str_class_means = devkit_path+str(nb_cl)+'class_means.pickle'
+str_class_means = devkit_path+str(total_nb_cl)+'class_means.pickle'
 with open(str_class_means,'rb') as fp:
       class_means = cPickle.load(fp)
 
@@ -104,7 +105,7 @@ for itera in range(nb_groups):
 
     print(len(files_valid[i]))
 
-    inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
+    inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, total_nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
 
     label_batch_one_hot = tf.one_hot(label_batch, 10)
 
@@ -190,4 +191,4 @@ for itera in range(nb_groups):
     tf.reset_default_graph()
 
 
-np.save('results_top'+str(top)+'_acc_'+is_cumul+'_cl'+str(nb_cl),acc_list)
+np.save('results_top'+str(top)+'_acc_'+is_cumul+'_cl'+str(total_nb_cl),acc_list)
