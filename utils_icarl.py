@@ -31,9 +31,10 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
             
             #op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
             #op_feature_map = graph.get_operation_by_name('ResNet18/average_pooling2d/AvgPool').outputs[0]
+
             op_feature_map = graph.get_operation_by_name('ResNet18/pool3').outputs[0]
     
-    loss_class = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=label_batch_one_hot, logits=scores))
+    loss_class = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch_one_hot, logits=scores))
 
     ### Initilization
     params = dict(cPickle.load(open(save_path+'model-iteration'+str(nb_cl)+'-%i.pickle' % itera, 'rb')))
@@ -46,7 +47,7 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
     processed_files=[]
     label_dico=[]
     Dtot=[]
-    tf.global_variables_initializer().run()
+
     for i in range(int(np.ceil(len(files_from_cl)/batch_size)+1)):
 
         sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])

@@ -40,7 +40,10 @@ except:
 
 
 def max_pool(name, l_input, k):
-	return tf.nn.max_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
+	if (name == 'pool3'):
+		return tf.nn.avg_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
+	else:
+		return tf.nn.max_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
 
 def dropout(x, keepPro, name = None):
 	return tf.nn.dropout(x, keepPro, name)
@@ -54,7 +57,7 @@ def norm(name, l_input, lsize=4):
 
 
 def conv2d(x, kHeight, kWidth, in_channels,
-			  filters, name, padding = "SAME"): #group=2 means the second part of AlexNet
+			  filters, name, padding = "SAME"):
 	with tf.variable_scope(name):
 		w       = tf.get_variable("W", shape=[kHeight, kWidth, in_channels, filters], dtype=tf.float32, collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES])
 		b       = tf.get_variable("b", shape=[filters], dtype=tf.float32, collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES])
@@ -219,6 +222,5 @@ def get_weight_initializer(params):
 
 def save_model(name, scope, sess):
     variables = tf.get_collection(tf.GraphKeys.WEIGHTS, scope=scope)
-    print(variables)
     d = [(v.name.split(':')[0], sess.run(v)) for v in variables]
     cPickle.dump(d, open(name, 'wb'))

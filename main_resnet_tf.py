@@ -24,8 +24,8 @@ import alexnet
 
 with gzip.open('mnist.pkl.gz', 'rb') as f:
     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f,encoding="latin-1")
-    traind = traind.astype("float32").reshape(-1,784)[0:10000]
-    trainl = trainl.astype("float32")[0:10000]
+    traind = traind.astype("float32").reshape(-1,784)
+    trainl = trainl.astype("float32")
     testd = testd.astype("float32").reshape(-1,784)
     testl = testl.astype("float32")
 data_placeholder2 = tf.placeholder(tf.float32,[None,784],  name='data_placeholder2') ;
@@ -36,11 +36,11 @@ label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholde
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 200             # Validation samples per class
-nb_cl      = 1             # Classes per group 
-nb_groups  = 10             # Number of groups
-nb_proto   = 50             # Number of prototypes per class: total protoset memory/ total number of classes
+nb_cl      = 5             # Classes per group 
+nb_groups  = 2             # Number of groups
+nb_proto   = 300             # Number of prototypes per class: total protoset memory/ total number of classes
 epochs     = 50             # Total number of epochs 
-lr_old     = 2.             # Initial learning rate
+lr_old     = 0.1             # Initial learning rate
 lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
@@ -140,6 +140,13 @@ for itera in range(nb_groups):
       #files_from_cl   += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
       labels_from_cl  = np.vstack((labels_from_cl,tmp_arr))
 
+    # if(itera == 9):
+    #   for k in range(int(np.floor(len(files_from_cl)/100))):
+    #     plt.imshow(files_from_cl[k*100].reshape(28,28))
+    #     plt.show()
+    #     print(np.argmax(labels_from_cl[k*100]))
+
+  print('shape of labells:',np.asarray(labels_from_cl).shape)
 
   ## Import the data reader ##
   #image_train, label_train   = utils_data.read_data(train_path, labels_dic, mixing, files_from_cl=files_from_cl)  
@@ -209,7 +216,6 @@ for itera in range(nb_groups):
       pred_new_classes  = tf.stack([scores[:,i] for i in new_cl],axis=1)
       l2_reg            = wght_decay * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='ResNet18'))
       loss_class        = tf.reduce_mean(tf.concat([tf.nn.sigmoid_cross_entropy_with_logits(labels=label_old_classes, logits=pred_old_classes),tf.nn.sigmoid_cross_entropy_with_logits(labels=label_new_classes, logits=pred_new_classes)],1)) 
-      #nrCorrect         = tf.reduce_mean(tf.cast(tf.equal (tf.argmax(scores,axis=1), tf.argmax(label_batch,axis=1)), tf.float32)) ;
       loss              = loss_class + l2_reg
       learning_rate     = tf.placeholder(tf.float32, shape=[])
       #opt               = tf.train.MomentumOptimizer(learning_rate, 0.9)
@@ -260,12 +266,11 @@ for itera in range(nb_groups):
                 loss_batch = []
 
             # Plot the training top 1 accuracy every 80 batches
-            if (i+1)%5 == 0:
+            if (i+1)%15 == 0:
                 stat = []
                 stat += ([ll in best for ll, best in zip(lab, np.argsort(sc, axis=1)[:, -1:])])
                 stat =np.average(stat)
                 print('Training accuracy %f' %stat)
-                print('my trainig accuracy', acc)
     
         #testacc = sess.run(nrCorrect, feed_dict = {data_placeholder: testd, label_placeholder: testl})
         #print('my test accuracy %f' %testacc)
@@ -274,7 +279,7 @@ for itera in range(nb_groups):
             lr /= lr_factor
     
     #acc = sess.run(accuracy, feed_dict=fd1)
-    print('my trainig accuracy', acc)
+    #print('my trainig accuracy', acc)
     coord.request_stop()
     coord.join(threads)
 
