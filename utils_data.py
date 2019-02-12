@@ -35,30 +35,30 @@ def parse_devkit_meta(devkit_path):
 
     return labels_dic, label_names, validation_ground_truth
 
-def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
+def read_data_mnist(traind, trainl, labels_dic, labels_from_cl, mixing, files_from_cl):
 
     lbls = trainl
 
     files_from_cl = np.asarray(files_from_cl)
 
-
     labels_from_cl = np.asarray(labels_from_cl)
-    labels_from_cl = np.argmax(labels_from_cl,1)
+    labels_old = np.array([mixing[labels_dic[np.argmax(i)]] for i in labels_from_cl])
+    #labels_from_cl = np.argmax(labels_from_cl,1)
 
     assert(len(files_from_cl) == len(labels_from_cl))
     images              = tf.convert_to_tensor(files_from_cl)
-    labels              = tf.convert_to_tensor(labels_from_cl)
+    labels              = tf.convert_to_tensor(labels_old)
 
     input_queue         = tf.train.slice_input_producer([images, labels], shuffle=True,capacity=2000)
     image_file_content  = input_queue[0]
     label               = input_queue[1]
 
-    image_file_content  = tf.expand_dims(image_file_content,2)
+    #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings = tf.constant([[98,98],[98,98],[1,1]])
-    paddings            = tf.constant([[100,100],[100,100],[1,1]])
-    image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
+    #paddings            = tf.constant([[100,100],[100,100],[1,1]])
+    #image_file_content = tf.pad(image_file_content, paddings, "CONSTANT")
 
-    image               = tf.image.random_flip_left_right(image_file_content)
+    image               = image_file_content#tf.image.random_flip_left_right(image_file_content)
 
     # init_op = tf.global_variables_initializer()
     # with tf.Session() as sess:
@@ -69,10 +69,9 @@ def read_data_mnist(traind, trainl, labels_from_cl, mixing, files_from_cl):
     #         lbl = label.eval()
             
     #         print(lbl)
-    #         print(imag.shape, 'shape')
-    #         plt.imshow(imag)
+    #         plt.imshow(imag.reshape(28,28))
     #         plt.show()
-
+    # exit()
     return image, label
     
 def read_data(prefix, labels_dic, mixing, files_from_cl):
@@ -99,7 +98,10 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     image_list  = np.asarray(files_from_cl)
     
     files_list  = indexes
-    labels_list = np.asarray(np.argmax(labels_from_cl,1))
+    
+    labels_list = np.array([mixing[labels_dic[np.argmax(i)]] for i in labels_from_cl])
+
+    #labels_list = np.asarray(np.argmax(labels_from_cl,1))
 
     images              = tf.convert_to_tensor(image_list)
     files               = tf.convert_to_tensor(files_list)
@@ -108,12 +110,12 @@ def read_data_test_mnist(indexes, traind, labels_dic, mixing, labels, labels_fro
     image_file_content  = input_queue[0]
     label               = input_queue[1]
     file_string         = input_queue[2]
-    image_file_content  = tf.expand_dims(image_file_content,2)
+    #image_file_content  = tf.expand_dims(image_file_content,2)
     #paddings            = tf.constant([[98,98],[98,98],[1,1]])
-    paddings            = tf.constant([[100,100],[100,100],[1,1]])
-    image               = tf.pad(image_file_content, paddings, "CONSTANT")
+    #paddings            = tf.constant([[100,100],[100,100],[1,1]])
+    #image               = tf.pad(image_file_content, paddings, "CONSTANT")
     
-    return image, label, file_string
+    return image_file_content, label, file_string
 
 def read_data_test(prefix,labels_dic, mixing, files_from_cl):
     image_list = sorted(map(lambda x: os.path.join(prefix, x),
@@ -137,10 +139,11 @@ def read_data_test(prefix,labels_dic, mixing, files_from_cl):
 
     return image, label,file_string
 
-def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb_val):
+def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb_val, testd, testl):
     lbls = trainl
 
-    labels_old = np.array([mixing[labels_dic[np.argmax(i)]] for i in lbls]) 
+    labels_old = np.array([mixing[labels_dic[np.argmax(i)]] for i in lbls])
+    labels_old_test =  np.array([mixing[labels_dic[np.argmax(i)]] for i in testl])
 
     files_train = []
     files_valid = []
@@ -160,14 +163,24 @@ def prepare_data(traind, trainl, mixing, order, labels_dic, nb_groups, nb_cl, nb
     for i in range(nb_groups):
         for i2 in range(nb_cl):
             tmp_ind=np.where(labels_old == order[nb_cl*i+i2])[0]
-            np.random.shuffle(tmp_ind)
+            tmp_ind_test = np.where(labels_old_test == order[nb_cl*i+i2])[0]
 
-            files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])
-            labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind)-nb_val]])
-            files_train[i].extend(traind[tmp_ind[0:len(tmp_ind)-nb_val]])
-            files_valid[i].extend(traind[tmp_ind[len(tmp_ind)-nb_val:]])
-            labels_valid[i].extend(trainl[tmp_ind[len(tmp_ind)-nb_val:]])
-            all_file_indexes[i].extend(tmp_ind[len(tmp_ind)-nb_val:])
+            np.random.shuffle(tmp_ind)
+            np.random.shuffle(tmp_ind)
+            
+            # files_indexes[i].extend(tmp_ind[0:len(tmp_ind)-nb_val])
+            # labels_train[i].extend(trainl[tmp_ind[0:len(tmp_ind)-nb_val]])
+            # files_train[i].extend(traind[tmp_ind[0:len(tmp_ind)-nb_val]])
+            # files_valid[i].extend(traind[tmp_ind[len(tmp_ind)-nb_val:]])
+            # labels_valid[i].extend(trainl[tmp_ind[len(tmp_ind)-nb_val:]])
+            # all_file_indexes[i].extend(tmp_ind[len(tmp_ind)-nb_val:])
+
+            files_indexes[i].extend(tmp_ind)
+            labels_train[i].extend(trainl[tmp_ind])
+            files_train[i].extend(traind[tmp_ind])
+            files_valid[i].extend(testd[tmp_ind_test])
+            labels_valid[i].extend(testl[tmp_ind_test])
+            all_file_indexes[i].extend(tmp_ind_test)
 
     return files_train, files_valid, labels_train, files_indexes, labels_valid, all_file_indexes
 
