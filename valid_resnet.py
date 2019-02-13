@@ -10,6 +10,9 @@ import sys
 import gzip
 import matplotlib.pyplot as plt
 
+import scikitplot as skplt
+from sklearn.model_selection import cross_val_predict
+
 try:
     import cPickle
 except:
@@ -154,6 +157,12 @@ for itera in range(nb_groups):
         for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
             
             sc, l , loss,files_tmp,feat_map_tmp = sess.run([scores, label_batch,loss_class,file_string_batch,op_feature_map])
+            # predictions = cross_val_predict(sc, files_from_cl, labels_from_cl)
+            # skplt.metrics.plot_confusion_matrix(labels_from_cl, predictions, normalize=True)
+            # plt.show()
+
+
+            confusion = tf.confusion_matrix(labels=np.argmax(np.asarray(labels_from_cl),1), predictions=sc, )
 
             mapped_prototypes = feat_map_tmp[:,0,0,:]
             pred_inter    = (mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0)

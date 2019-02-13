@@ -36,7 +36,7 @@ label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholde
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 200             # Validation samples per class
-nb_cl      = [9,1]             # Classes per group
+nb_cl      = [8,2]             # Classes per group
 total_nb_cl = 10
 nb_groups  = 2             # Number of groups
 nb_proto   = 300             # Number of prototypes per class: total protoset memory/ total number of classes

@@ -9,6 +9,8 @@ import scipy.io
 import sys
 import gzip
 import matplotlib.pyplot as plt
+import scikitplot as skplt
+
 try:
     import cPickle
 except:
@@ -32,7 +34,8 @@ keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 batch_size = 128             # Batch size
 nb_cl      = 5              # Classes per group 
 nb_groups  = 2              # Number of groups
-top        = 5               # Choose to evaluate the top X accuracy 
+total_nb_cl = 10
+top        = 1               # Choose to evaluate the top X accuracy 
 itera      = 1               # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
@@ -44,20 +47,20 @@ gpu        = '0'             # Used GPU
 # train_path  = '/ssd_disk/ILSVRC2012/train'
 # save_path   = '/media/data/srebuffi/'
 
-devkit_path = 'trained/'
+devkit_path = '50epochs300protoCustom9,1/'
 #train_path  = '../../../images1'
-save_path   = './trained/result/'
+save_path   = './50epochs300protoCustom9,1/result/'
 
 ###########################
 
 mean_acc     = []
 
 # Load ResNet settings
-str_mixing = devkit_path+str(nb_cl)+'mixing.pickle'
+str_mixing = devkit_path+str(total_nb_cl)+'mixing.pickle'
 with open(str_mixing,'rb') as fp:
     mixing = cPickle.load(fp)
 
-str_settings_resnet = devkit_path+ str(nb_cl)+'settings_resnet.pickle'
+str_settings_resnet = devkit_path+ str(total_nb_cl)+'settings_resnet.pickle'
 with open(str_settings_resnet,'rb') as fp:
     order       = cPickle.load(fp)
     files_valid = cPickle.load(fp)
@@ -68,7 +71,7 @@ with open(str_settings_resnet,'rb') as fp:
     all_file_indexes = cPickle.load(fp)
 print(len(files_valid))
 # Load class means
-str_class_means = devkit_path+str(nb_cl)+'class_means.pickle'
+str_class_means = devkit_path+str(total_nb_cl)+'class_means.pickle'
 with open(str_class_means,'rb') as fp:
       class_means = cPickle.load(fp)
 
@@ -93,7 +96,7 @@ for i in eval_groups:
     labels_from_cl.extend(labels_valid[i])
     indexs_of_files.extend(all_file_indexes[i])
 
-inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
+inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, total_nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
 
 label_batch_one_hot = tf.one_hot(label_batch, 10)
 
@@ -136,14 +139,26 @@ with tf.Session(config=config) as sess:
     stat_icarl = []
     stat_ncm     = []
     b = 0
+    lbl_list = []
+    sc_list = []
+    icarl_list = []
+    ncm_list = []
 
     for i in range(int(np.ceil(len(files_from_cl)/batch_size))):
         acc, sc, l , loss,files_tmp,feat_map_tmp = sess.run([accuracy,scores, label_batch,loss_class,file_string_batch,op_feature_map])
-
+        lbl_list.extend(l)
+        sc_list.extend(np.argmax(sc,1))
+        
+        
         mapped_prototypes = feat_map_tmp[:,0,0,:]
+
         pred_inter    = (mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0)
         sqd_icarl     = -cdist(class_means[:,:,0,itera].T, pred_inter.T, 'sqeuclidean').T
         sqd_ncm       = -cdist(class_means[:,:,1,itera].T, pred_inter.T, 'sqeuclidean').T
+
+        icarl_list.extend(np.argmax(sqd_icarl,1))
+        ncm_list.extend(np.argmax(sqd_ncm,1))
+
         stat_hb1     += ([ll in best for ll, best in zip(l, np.argsort(sc, axis=1)[:, -top:])])
         stat_icarl   += ([ll in best for ll, best in zip(l, np.argsort(sqd_icarl, axis=1)[:, -top:])])
         stat_ncm     += ([ll in best for ll, best in zip(l, np.argsort(sqd_ncm, axis=1)[:, -top:])])
@@ -154,7 +169,13 @@ with tf.Session(config=config) as sess:
         # plt.show();
         # b = b + 128
 
+
+    skplt.metrics.plot_confusion_matrix(lbl_list, icarl_list, normalize=True, title="iCaRL")
+    skplt.metrics.plot_confusion_matrix(lbl_list, sc_list, normalize=True, title="Hybrid-1")
+    skplt.metrics.plot_confusion_matrix(lbl_list, ncm_list, normalize=True, title="NCM")
     
+    
+  
     coord.request_stop()
     coord.join(threads)
 
@@ -165,9 +186,9 @@ print('NCM top '+str(top)+' accuracy: %f' %np.average(stat_ncm))
 acc_list[itera,0] = np.average(stat_icarl)
 acc_list[itera,1] = np.average(stat_hb1)
 acc_list[itera,2] = np.average(stat_ncm)
-
+plt.show()
 # Reset the graph to compute the numbers ater the next increment
 tf.reset_default_graph()
 
 
-np.save('results_top'+str(top)+'_acc_cl'+str(nb_cl),acc_list)
+np.save('results_top'+str(top)+'_acc_cl'+str(total_nb_cl),acc_list)
