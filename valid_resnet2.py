@@ -32,11 +32,11 @@ keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 
 ######### Modifiable Settings ##########
 batch_size = 128             # Batch size
-nb_cl      = 5              # Classes per group 
-nb_groups  = 2              # Number of groups
+nb_cl      = 1              # Classes per group 
+nb_groups  = 10              # Number of groups
 total_nb_cl = 10
 top        = 1               # Choose to evaluate the top X accuracy 
-itera      = 1               # Choose the state of the network : 0 correspond to the first batch of classes
+itera      = 9               # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
 ########################################
@@ -47,9 +47,9 @@ gpu        = '0'             # Used GPU
 # train_path  = '/ssd_disk/ILSVRC2012/train'
 # save_path   = '/media/data/srebuffi/'
 
-devkit_path = '50epochs300protoCustom9,1/'
+devkit_path = ''
 #train_path  = '../../../images1'
-save_path   = './50epochs300protoCustom9,1/result/'
+save_path   = 'result/'
 
 ###########################
 
@@ -149,8 +149,8 @@ with tf.Session(config=config) as sess:
         lbl_list.extend(l)
         sc_list.extend(np.argmax(sc,1))
         
-        
-        mapped_prototypes = feat_map_tmp[:,0,0,:]
+        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,2048)
+        mapped_prototypes = feat_map_tmp_reshape[:,0,0,:]
 
         pred_inter    = (mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0)
         sqd_icarl     = -cdist(class_means[:,:,0,itera].T, pred_inter.T, 'sqeuclidean').T

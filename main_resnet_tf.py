@@ -36,13 +36,13 @@ label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholde
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 200             # Validation samples per class
-nb_cl      = [8,2]             # Classes per group
+nb_cl      = [1,1,1,1,1,1,1,1,1,1]             # Classes per group
 total_nb_cl = 10
-nb_groups  = 2             # Number of groups
-nb_proto   = 300             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 50             # Total number of epochs 
+nb_groups  = 10             # Number of groups
+nb_proto   = 100             # Number of prototypes per class: total protoset memory/ total number of classes
+epochs     = 10             # Total number of epochs 
 lr_old     = 0.1             # Initial learning rate
-lr_strat   = [20,30,40,50]  # Epochs where learning rate gets decreased
+lr_strat   = [3,5,8]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
 wght_decay = 0.00001        # Weight Decay
@@ -60,7 +60,7 @@ save_path   = 'result/'
 #####################################################################################################
 
 ### Initialization of some variables ###
-class_means    = np.zeros((128,total_nb_cl,2,nb_groups))
+class_means    = np.zeros((2048,total_nb_cl,2,nb_groups))
 loss_batch     = []
 files_protoset = []
 labels_protoset = []
@@ -76,7 +76,7 @@ print("Mixing the classes and putting them in batches of classes...")
 np.random.seed(1993)
 order  = np.arange(total_nb_cl)
 mixing = np.arange(total_nb_cl)
-#np.random.shuffle(mixing)
+np.random.shuffle(mixing)
 
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
@@ -122,24 +122,16 @@ for itera in range(nb_groups):
     files_from_cl = files_train[itera][:]
     labels_from_cl = file_labels[itera][:]
     indexs_of_files = file_indexes[itera][:]
-    testFiles       = np.vstack((testFiles, files_valid[itera][:]))
-    testLabels      = np.vstack((testLabels, labels_valid[itera][:]))
 
-    np.random.shuffle(testFiles)
-    np.random.shuffle(testLabels)
-
+    print('itera', itera)
     for i in range(sum(nb_cl[:itera])):
       nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./itera)) # Reducing number of exemplars of the previous classes
       tmp_var = files_protoset[i]
-      tmp_lbl = labels_protoset[i]
-      tmp_arr = np.zeros((min(len(tmp_var),nb_protos_cl),10))
-      l = 0
-      for j in tmp_arr:
-        j[tmp_lbl[l]] = 1
-        l += 1
+      print(len(tmp_var), 'tmp_var')
+      print(min(len(tmp_var),nb_protos_cl), 'minimum')
       files_from_cl   = np.vstack((files_from_cl,traind[tmp_var[0:min(len(tmp_var),nb_protos_cl)]]))
       #files_from_cl   += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
-      labels_from_cl  = np.vstack((labels_from_cl,tmp_arr))
+      labels_from_cl  = np.vstack((labels_from_cl,trainl[tmp_var[0:min(len(tmp_var),nb_protos_cl)]]))
 
     # if(itera == 9):
     #   for k in range(int(np.floor(len(files_from_cl)/100))):
@@ -176,8 +168,8 @@ for itera in range(nb_groups):
         loss          = loss_class + l2_reg
 
         learning_rate = tf.placeholder(tf.float32, shape=[])
-        #opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
-        opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
+        opt           = tf.train.MomentumOptimizer(learning_rate, 0.9)
+        #opt           = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
 
         train_step    = opt.minimize(loss,var_list=variables_graph)
 

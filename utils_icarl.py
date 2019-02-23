@@ -54,8 +54,8 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
        
         processed_files.extend(files_tmp)
         label_dico.extend(l)
-        
-        mapped_prototypes = feat_map_tmp[:,0,0,:]
+        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,2048)
+        mapped_prototypes = feat_map_tmp_reshape[:,0,0,:]
 
         Dtot.append((mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0))
     
