@@ -92,9 +92,9 @@ files_from_cl = []
 labels_from_cl = []
 indexs_of_files = []
 for i in eval_groups:
-    files_from_cl.extend(files_valid[i])
-    labels_from_cl.extend(labels_valid[i])
-    indexs_of_files.extend(all_file_indexes[i])
+    files_from_cl.extend(testd)
+    labels_from_cl.extend(testl)
+    indexs_of_files.extend(np.arange(0,10000))
 
 inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, total_nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
 
