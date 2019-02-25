@@ -17,7 +17,7 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
     
     image_batch, label_batch,file_string_batch = tf.train.batch([image_train, label_train,file_string], batch_size=batch_size, num_threads=8)
 
-    label_batch_one_hot = tf.one_hot(label_batch,nb_groups*nb_cl)
+    label_batch_one_hot = tf.one_hot(label_batch,nb_cl)
     
     ### Network and loss function  
     #mean_img = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
@@ -25,7 +25,7 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
     with tf.variable_scope('ResNet18'):
         with tf.device('/cpu:'+gpu):
             #scores         = utils_resnet.ownNet(image_batch, phase='test',num_outputs=nb_cl*nb_groups)
-            scores         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl*nb_groups)
+            scores         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl)
 
             graph          = tf.get_default_graph()
             
@@ -54,8 +54,8 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
        
         processed_files.extend(files_tmp)
         label_dico.extend(l)
-        
-        mapped_prototypes = feat_map_tmp[:,0,0,:]
+        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,2048)
+        mapped_prototypes = feat_map_tmp_reshape[:,0,0,:]
 
         Dtot.append((mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0))
     
@@ -71,7 +71,7 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups, keep_prob):
   with tf.variable_scope('ResNet18'):
     with tf.device('/cpu:' + gpu):
         #score = utils_resnet.ownNet(image_batch, phase='train',num_outputs=nb_cl*nb_groups)
-        score         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl*nb_groups)
+        score         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl)
         scores.append(score)
     
     scope = tf.get_variable_scope()
@@ -82,7 +82,7 @@ def prepare_networks(gpu,image_batch, nb_cl, nb_groups, keep_prob):
   with tf.variable_scope('store_ResNet18'):
     with tf.device('/cpu:' + gpu):
         #score = utils_resnet.ownNet(image_batch, phase='train',num_outputs=nb_cl*nb_groups)
-        score         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl*nb_groups)
+        score         = alexnet.AlexNet(image_batch, keep_prob, phase='test', num_outputs=nb_cl)
         scores_stored.append(score)
     
     scope = tf.get_variable_scope()
