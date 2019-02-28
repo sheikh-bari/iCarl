@@ -10,6 +10,7 @@ import gzip
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button ;
 import math ;
+from tensorflow import keras
 try:
     import cPickle
 except:
@@ -22,12 +23,35 @@ import utils_icarl
 import utils_data
 import alexnet
 
-with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f,encoding="latin-1")
-    traind = traind.astype("float32").reshape(-1,784)
-    trainl = trainl.astype("float32")
-    testd = testd.astype("float32").reshape(-1,784)
-    testl = testl.astype("float32")
+# with gzip.open('mnist.pkl.gz', 'rb') as f:
+#     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f,encoding="latin-1")
+#     traind = traind.astype("float32").reshape(-1,784)
+#     trainl = trainl.astype("float32")
+#     testd = testd.astype("float32").reshape(-1,784)
+#     testl = testl.astype("float32")
+
+fashion_mnist = keras.datasets.fashion_mnist
+((traind, trainlabel), (testd, testlabel)) = fashion_mnist.load_data()
+traind = traind.astype("float32").reshape(-1,784)
+trainlabel = trainlabel.astype("uint8")
+
+trainl = np.zeros((60000, 10))
+trainl[np.arange(60000), trainlabel] = 1
+
+testd = testd.astype("float32").reshape(-1,784)
+testlabel = testlabel.astype("uint8")
+
+testl = np.zeros((10000, 10))
+testl[np.arange(10000), testlabel] = 1
+
+
+# for i in range(10):
+
+#   plt.imshow(traind[i].reshape(28,28))
+#   plt.show()
+#   print(trainl[i])
+# exit()
+
 data_placeholder2 = tf.placeholder(tf.float32,[None,784],  name='data_placeholder2') ;
 label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholder2') ;
 
@@ -39,10 +63,10 @@ nb_val     = 200             # Validation samples per class
 nb_cl      = [1,1,1,1,1,1,1,1,1,1]             # Classes per group
 total_nb_cl = 10
 nb_groups  = 10            # Number of groups
-nb_proto   = 500             # Number of prototypes per class: total protoset memory/ total number of classes
+nb_proto   = 100             # Number of prototypes per class: total protoset memory/ total number of classes
 epochs     = 10             # Total number of epochs 
 lr_old     = 0.1             # Initial learning rate
-lr_strat   = [3,5,8]  # Epochs where learning rate gets decreased
+lr_strat   = [20,30,40]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
 wght_decay = 0.00001        # Weight Decay
@@ -76,7 +100,7 @@ print("Mixing the classes and putting them in batches of classes...")
 np.random.seed(1993)
 order  = np.arange(total_nb_cl)
 mixing = np.arange(total_nb_cl)
-np.random.shuffle(mixing)
+#np.random.shuffle(mixing)
 
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
@@ -127,8 +151,6 @@ for itera in range(nb_groups):
     for i in range(sum(nb_cl[:itera])):
       nb_protos_cl  = int(np.ceil(nb_proto*nb_groups*1./itera)) # Reducing number of exemplars of the previous classes
       tmp_var = files_protoset[i]
-      print(len(tmp_var), 'tmp_var')
-      print(min(len(tmp_var),nb_protos_cl), 'minimum')
       files_from_cl   = np.vstack((files_from_cl,traind[tmp_var[0:min(len(tmp_var),nb_protos_cl)]]))
       #files_from_cl   += tmp_var[0:min(len(tmp_var),nb_protos_cl)]
       labels_from_cl  = np.vstack((labels_from_cl,trainl[tmp_var[0:min(len(tmp_var),nb_protos_cl)]]))

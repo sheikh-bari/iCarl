@@ -10,6 +10,8 @@ import sys
 import gzip
 import matplotlib.pyplot as plt
 import scikitplot as skplt
+from tensorflow import keras
+
 
 try:
     import cPickle
@@ -22,12 +24,28 @@ import utils_resnet
 import utils_icarl
 import utils_data
 
-with gzip.open('mnist.pkl.gz', 'rb') as f:
-    ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
-    traind = traind.astype("float32").reshape(-1,784)
-    trainl = trainl.astype("float32")
-    testd = testd.astype("float32").reshape(-1,784)
-    testl = testl.astype("float32")
+# with gzip.open('mnist.pkl.gz', 'rb') as f:
+#     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
+#     traind = traind.astype("float32").reshape(-1,784)
+#     trainl = trainl.astype("float32")
+#     testd = testd.astype("float32").reshape(-1,784)
+#     testl = testl.astype("float32")
+
+fashion_mnist = keras.datasets.fashion_mnist
+((traind, trainlabel), (testd, testlabel)) = fashion_mnist.load_data()
+traind = traind.astype("float32").reshape(-1,784)
+trainlabel = trainlabel.astype("uint8")
+
+trainl = np.zeros((60000, 10))
+trainl[np.arange(60000), trainlabel] = 1
+
+testd = testd.astype("float32").reshape(-1,784)
+testlabel = testlabel.astype("uint8")
+
+testl = np.zeros((10000, 10))
+testl[np.arange(10000), testlabel] = 1
+
+
 keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 
 ######### Modifiable Settings ##########
@@ -36,7 +54,7 @@ nb_cl      = 1              # Classes per group
 nb_groups  = 10              # Number of groups
 total_nb_cl = 10
 top        = 1               # Choose to evaluate the top X accuracy 
-itera      = 9               # Choose the state of the network : 0 correspond to the first batch of classes
+itera      = 9              # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
 ########################################
@@ -92,9 +110,12 @@ files_from_cl = []
 labels_from_cl = []
 indexs_of_files = []
 for i in eval_groups:
-    files_from_cl.extend(testd)
-    labels_from_cl.extend(testl)
-    indexs_of_files.extend(np.arange(0,10000))
+    #files_from_cl.extend(testd)
+    #labels_from_cl.extend(testl)
+    #indexs_of_files.extend(np.arange(0,10000))
+    files_from_cl.extend(files_valid[i])
+    labels_from_cl.extend(labels_valid[i])
+    indexs_of_files.extend(all_file_indexes[i])
 
 inits,scores,label_batch,loss_class,file_string_batch,op_feature_map = utils_icarl.reading_data_and_preparing_network(indexs_of_files, files_from_cl, gpu, itera, batch_size, traind, labels_dic, mixing, nb_groups, total_nb_cl, save_path, trainl, labels_from_cl,keep_prob) 
 
