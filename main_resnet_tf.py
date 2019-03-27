@@ -60,13 +60,13 @@ label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholde
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
 nb_val     = 200             # Validation samples per class
-nb_cl      = [1,1,1,1,1,1,1,1,1,1]             # Classes per group
+nb_cl      = [9,1]             # Classes per group
 total_nb_cl = 10
-nb_groups  = 10            # Number of groups
+nb_groups  = 2            # Number of groups
 nb_proto   = 100             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 10             # Total number of epochs 
-lr_old     = 0.1             # Initial learning rate
-lr_strat   = [20,30,40]  # Epochs where learning rate gets decreased
+epochs     = 15              # Total number of epochs 
+lr_old     = 0.001             # Initial learning rate
+lr_strat   = [15]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
 wght_decay = 0.00001        # Weight Decay
@@ -277,7 +277,7 @@ for itera in range(nb_groups):
             loss_batch.append(loss_class_val)
             # Plot the training error every 10 batches
             if len(loss_batch) == 30:
-                #print('training error: loss: ',np.mean(loss_batch))
+                print('training error: loss: ',np.mean(loss_batch))
                 loss_batch = []
 
             # Plot the training top 1 accuracy every 80 batches

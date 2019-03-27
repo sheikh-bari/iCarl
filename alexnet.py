@@ -40,7 +40,7 @@ except:
 
 
 def max_pool(name, l_input, k):
-	if (name == 'pool3'):
+	if (name == 'pool4'):
 		return tf.nn.avg_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
 	else:
 		return tf.nn.max_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
@@ -78,17 +78,21 @@ def AlexNet(inp, _dropout, phase, num_outputs=1000):
 
 	pool1   = max_pool('pool1', conv1, k=2)
 	norm1   = norm('norm1', pool1, lsize=4)
-	#norm1 = tf.nn.dropout(norm1, _dropout)
+	norm1 = tf.nn.dropout(norm1, 0.8)
 
 	conv2 = conv2d(norm1, 3, 3, 32, 64, 'conv2')
 	pool2 = max_pool('pool2', conv2, k=2)
 	norm2 = norm('norm2', pool2, lsize=4)
-	#norm2 = tf.nn.dropout(norm2, _dropout)
+	norm2 = tf.nn.dropout(norm2, 0.8)
 
 	conv3 = conv2d(norm2, 3, 3, 64, 128, 'conv3')
 	pool3 = max_pool('pool3', conv3, k=2)
 	norm3 = norm('norm3', pool3, lsize=4)
-	#norm3 = tf.nn.dropout(norm3, _dropout)
+	#norm3 = tf.nn.dropout(norm3, 0.8)
+
+	conv4 = conv2d(norm3, 3,3,128,512, 'conv4')
+	pool4 = max_pool('pool4', conv4, k=2)
+	norm4 = norm('norm4', pool4, lsize=4)
 
 	#w1  = tf.random_normal([4*4*128, 1000])
 	#b   = tf.random_normal([1000])
@@ -108,7 +112,7 @@ def AlexNet(inp, _dropout, phase, num_outputs=1000):
 	b = tf.get_variable(initializer=b1Init,dtype=tf.float32, name ="b3", collections=[tf.GraphKeys.WEIGHTS, tf.GraphKeys.GLOBAL_VARIABLES], shape=[1,1000]) ;
 
 
-	dense1 = tf.reshape(norm3, [-1, w1.get_shape().as_list()[0]])
+	dense1 = tf.reshape(norm4, [-1, w1.get_shape().as_list()[0]])
 	dense1 = tf.nn.relu(tf.matmul(dense1, w1) + b, name='fc1')
 
 	w2v = npr.uniform(-0.1,0.1, [Z3,10])

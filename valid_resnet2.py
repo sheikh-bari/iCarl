@@ -50,11 +50,11 @@ keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 
 ######### Modifiable Settings ##########
 batch_size = 128             # Batch size
-nb_cl      = 1              # Classes per group 
-nb_groups  = 10              # Number of groups
+nb_cl      = 5              # Classes per group 
+nb_groups  = 2              # Number of groups
 total_nb_cl = 10
 top        = 1               # Choose to evaluate the top X accuracy 
-itera      = 9              # Choose the state of the network : 0 correspond to the first batch of classes
+itera      = 1              # Choose the state of the network : 0 correspond to the first batch of classes
 eval_groups= np.array(range(itera+1)) # List indicating on which batches of classes to evaluate the classifier
 gpu        = '0'             # Used GPU
 ########################################
