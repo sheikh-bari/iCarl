@@ -23,54 +23,98 @@ import utils_icarl
 import utils_data
 import alexnet
 
-# with gzip.open('mnist.pkl.gz', 'rb') as f:
-#     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f,encoding="latin-1")
-#     traind = traind.astype("float32").reshape(-1,784)
-#     trainl = trainl.astype("float32")
-#     testd = testd.astype("float32").reshape(-1,784)
-#     testl = testl.astype("float32")
+with gzip.open('mnist.pkl.gz', 'rb') as f:
+    ((traindM, trainlM), (valdM, vallM), (testdM, testlM)) = cPickle.load(f,encoding="latin-1")
+    traindM = traindM.astype("float32").reshape(-1,784)
+    trainlM = trainlM.astype("uint8")
+    testdM = testdM.astype("float32").reshape(-1,784)
+    testlM = testlM.astype("uint8")
+
+trainlMList = np.argmax(trainlM,axis=1);
+testLMList = np.argmax(testlM,axis=1);
+
+initial_labels = set([5,6,7,8,9]);
+dataSet2Labels = [i for i, e in enumerate(trainlMList) if e in initial_labels];
+trainlabelM = trainlMList[dataSet2Labels];
+traindM = traindM[dataSet2Labels];
+
+TestdataSet2Labels = [i for i, e in enumerate(testLMList) if e in initial_labels];
+testlabelM = testLMList[TestdataSet2Labels];
+testdM = testdM[TestdataSet2Labels];
+
+
+# trainlMList = [x+10 for x in trainlMList]
+# testLMList = [x+10 for x in testLMList]
+
+trainlM = np.zeros((29404, 10))
+trainlM[np.arange(29404), trainlabelM] = 1
+
+testlM = np.zeros((4861, 10))
+testlM[np.arange(4861), testlabelM] = 1
+
 
 fashion_mnist = keras.datasets.fashion_mnist
-((traind, trainlabel), (testd, testlabel)) = fashion_mnist.load_data()
-traind = traind.astype("float32").reshape(-1,784)
-trainlabel = trainlabel.astype("uint8")
-
-trainl = np.zeros((60000, 10))
-trainl[np.arange(60000), trainlabel] = 1
-
-testd = testd.astype("float32").reshape(-1,784)
-testlabel = testlabel.astype("uint8")
-
-testl = np.zeros((10000, 10))
-testl[np.arange(10000), testlabel] = 1
+((traindF, trainlabelF), (testdF, testlabelF)) = fashion_mnist.load_data()
+traindF = traindF.astype("float32").reshape(-1,784)
+trainlabel = trainlabelF.astype("uint8")
+ 
+initial_labels = set([0,1,2,3,4]);
+dataSet1Labels = [i for i, e in enumerate(trainlabel) if e in initial_labels];
+trainlabelF = trainlabel[dataSet1Labels];
+traindF = traindF[dataSet1Labels];
 
 
-# for i in range(10):
+trainlF = np.zeros((30000, 10))
+trainlF[np.arange(30000), trainlabelF] = 1
 
-#   plt.imshow(traind[i].reshape(28,28))
-#   plt.show()
-#   print(trainl[i])
+
+testdF = testdF.astype("float32").reshape(-1,784)
+testlabelF = testlabelF.astype("uint8")
+
+
+TestdataSet1Labels = [i for i, e in enumerate(testlabelF) if e in initial_labels];
+testlabelF = testlabelF[TestdataSet1Labels];
+testdF = testdF[TestdataSet1Labels];
+
+testlF = np.zeros((5000, 10))
+testlF[np.arange(5000), testlabelF] = 1
+
+
+traind = np.vstack((traindF,traindM));
+trainl = np.vstack((trainlF,trainlM));
+
+testd = np.vstack((testdF,testdM));
+testl = np.vstack((testlF,testlM));
+
+
+
+# for i in range(60000):
+#   if(i%5000) == 0:
+#     plt.imshow(traind[i].reshape(28,28))
+#     plt.show()
+#     print(trainl[i])
+
 # exit()
 
 data_placeholder2 = tf.placeholder(tf.float32,[None,784],  name='data_placeholder2') ;
-label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholder2') ;
+label_placeholder2 = tf.placeholder(tf.float32,[None,20], name='label_placeholder2') ;
 
 
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_val     = 200             # Validation samples per class
-nb_cl      = [9,1]             # Classes per group
+nb_val     = 100            # Validation samples per class
+nb_cl      = [5,5]          # Classes per group
 total_nb_cl = 10
-nb_groups  = 2            # Number of groups
-nb_proto   = 100             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 15              # Total number of epochs 
-lr_old     = 0.001             # Initial learning rate
-lr_strat   = [15]  # Epochs where learning rate gets decreased
+nb_groups  = 2              # Number of groups
+nb_proto   = 500            # Number of prototypes per class: total protoset memory/ total number of classes
+epochs     = 15             # Total number of epochs 
+lr_old     = 0.001          # Initial learning rate
+lr_strat   = [15]           # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
 wght_decay = 0.00001        # Weight Decay
-#dropout    = 0.8            # Dropout, probability to keep units
+#dropout    = 0.8           # Dropout, probability to keep units
 ########################################
 
 ######### Paths  ##########
@@ -105,7 +149,7 @@ mixing = np.arange(total_nb_cl)
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
 # Or you can just do like this
-define_class = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+define_class = list(range(0,10))
 labels_dic = {k: v for v, k in enumerate(define_class)}
 
 # Preparing the files per group of classes

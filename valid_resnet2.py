@@ -24,26 +24,45 @@ import utils_resnet
 import utils_icarl
 import utils_data
 
-# with gzip.open('mnist.pkl.gz', 'rb') as f:
-#     ((traind, trainl), (vald, vall), (testd, testl)) = cPickle.load(f, encoding="latin-1")
-#     traind = traind.astype("float32").reshape(-1,784)
-#     trainl = trainl.astype("float32")
-#     testd = testd.astype("float32").reshape(-1,784)
-#     testl = testl.astype("float32")
+with gzip.open('mnist.pkl.gz', 'rb') as f:
+    ((traindM, trainlM), (valdM, vallM), (testdM, testlM)) = cPickle.load(f,encoding="latin-1")
+    traindM = traindM.astype("float32").reshape(-1,784)
+    trainlM = trainlM.astype("uint8")
+    testdM = testdM.astype("float32").reshape(-1,784)
+    testlM = testlM.astype("uint8")
+
+trainlMList = np.argmax(trainlM,axis=1);
+testLMList = np.argmax(testlM,axis=1);
+
+trainlMList = [x+10 for x in trainlMList]
+testLMList = [x+10 for x in testLMList]
+
+trainlM = np.zeros((60000, 20))
+trainlM[np.arange(60000), trainlMList] = 1
+
+testlM = np.zeros((10000, 20))
+testlM[np.arange(10000), testLMList] = 1
+
 
 fashion_mnist = keras.datasets.fashion_mnist
-((traind, trainlabel), (testd, testlabel)) = fashion_mnist.load_data()
-traind = traind.astype("float32").reshape(-1,784)
-trainlabel = trainlabel.astype("uint8")
+((traindF, trainlabelF), (testdF, testlabelF)) = fashion_mnist.load_data()
+traindF = traindF.astype("float32").reshape(-1,784)
+trainlabel = trainlabelF.astype("uint8")
 
-trainl = np.zeros((60000, 10))
-trainl[np.arange(60000), trainlabel] = 1
+trainlF = np.zeros((60000, 20))
+trainlF[np.arange(60000), trainlabelF] = 1
 
-testd = testd.astype("float32").reshape(-1,784)
-testlabel = testlabel.astype("uint8")
+testdF = testdF.astype("float32").reshape(-1,784)
+testlabelF = testlabelF.astype("uint8")
 
-testl = np.zeros((10000, 10))
-testl[np.arange(10000), testlabel] = 1
+testlF = np.zeros((10000, 20))
+testlF[np.arange(10000), testlabelF] = 1
+
+traind = np.vstack((traindF,traindM));
+trainl = np.vstack((trainlF,trainlM));
+
+testd = np.vstack((testdF,testdM));
+testl = np.vstack((testlF,testlM));
 
 
 keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
@@ -96,7 +115,7 @@ with open(str_class_means,'rb') as fp:
 # Loading the labels
 #labels_dic, label_names, validation_ground_truth = utils_data.parse_devkit_meta(devkit_path)
 
-define_class = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+define_class = list(range(0,10))
 labels_dic = {k: v for v, k in enumerate(define_class)}
 
 # Initialization
