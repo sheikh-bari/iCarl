@@ -35,13 +35,13 @@ label_placeholder2 = tf.placeholder(tf.float32,[None,10], name='label_placeholde
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_val     = 200             # Validation samples per class
+nb_val     = 100             # Validation samples per class
 nb_cl      = [1,1,1,1,1,1,1,1,1,1]             # Classes per group
 total_nb_cl = 10
 nb_groups  = 10            # Number of groups
-nb_proto   = 500             # Number of prototypes per class: total protoset memory/ total number of classes
-epochs     = 10             # Total number of epochs 
-lr_old     = 0.1             # Initial learning rate
+nb_proto   = 300             # Number of prototypes per class: total protoset memory/ total number of classes
+epochs     = 1             # Total number of epochs 
+lr_old     = 0.001             # Initial learning rate
 lr_strat   = [3,5,8]  # Epochs where learning rate gets decreased
 lr_factor  = 5.             # Learning rate decrease factor
 gpu        = '0'            # Used GPU
@@ -60,7 +60,7 @@ save_path   = 'result/'
 #####################################################################################################
 
 ### Initialization of some variables ###
-class_means    = np.zeros((2048,total_nb_cl,2,nb_groups))
+class_means    = np.zeros((4096,total_nb_cl,2,nb_groups))
 loss_batch     = []
 files_protoset = []
 labels_protoset = []

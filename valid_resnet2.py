@@ -149,7 +149,7 @@ with tf.Session(config=config) as sess:
         lbl_list.extend(l)
         sc_list.extend(np.argmax(sc,1))
         
-        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,2048)
+        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,4096)
         mapped_prototypes = feat_map_tmp_reshape[:,0,0,:]
 
         pred_inter    = (mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0)

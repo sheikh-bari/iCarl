@@ -37,9 +37,9 @@ keep_prob = tf.placeholder(name="keep_prob", dtype=tf.float32)
 
 ######### Modifiable Settings ##########
 batch_size = 128            # Batch size
-nb_cl      = 5             # Classes per group 
+nb_cl      = 1             # Classes per group 
 total_nb_cl = 10
-nb_groups  = 2             # Number of groups
+nb_groups  = 10             # Number of groups
 top        = 1              # Choose to evaluate the top X accuracy 
 is_cumul   = 'cumul'        # Evaluate on the cumul of classes if 'cumul', otherwise on the first classes
 gpu        = '0'            # Used GPU

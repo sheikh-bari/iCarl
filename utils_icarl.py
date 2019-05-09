@@ -32,7 +32,7 @@ def reading_data_and_preparing_network(index_of_files, files_from_cl, gpu, itera
             #op_feature_map = graph.get_operation_by_name('ResNet18/pool_last/avg').outputs[0]
             #op_feature_map = graph.get_operation_by_name('ResNet18/average_pooling2d/AvgPool').outputs[0]
 
-            op_feature_map = graph.get_operation_by_name('ResNet18/pool3').outputs[0]
+            op_feature_map = graph.get_operation_by_name('ResNet18/pool5').outputs[0]
     
     loss_class = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_batch_one_hot, logits=scores))
 
@@ -54,7 +54,7 @@ def load_class_in_feature_space(files_from_cl,batch_size,scores, label_batch,los
        
         processed_files.extend(files_tmp)
         label_dico.extend(l)
-        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,2048)
+        feat_map_tmp_reshape = feat_map_tmp.reshape(128,1,1,4096)
         mapped_prototypes = feat_map_tmp_reshape[:,0,0,:]
 
         Dtot.append((mapped_prototypes.T)/np.linalg.norm(mapped_prototypes.T,axis=0))
